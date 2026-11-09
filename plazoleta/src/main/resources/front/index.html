@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plazoleta de comidas</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header id="barra" class="barra" hidden>
+        <span class="marca">Plazoleta</span>
+        <div class="barra-sesion">
+            <span id="sesion"></span>
+            <button id="logout" class="boton boton-secundario" type="button">Salir</button>
+        </div>
+    </header>
+
+    <main id="vista-login" class="pagina-auth" hidden>
+        <section class="auth">
+            <h1 class="marca">Plazoleta de comidas</h1>
+            <p class="texto-suave">Ingresa con tu correo y clave</p>
+            <form id="form-login" class="formulario formulario-columna">
+                <label>Correo<input name="correo" type="email" autocomplete="username" required></label>
+                <label>Clave<input name="clave" type="password" autocomplete="current-password" required></label>
+                <button class="boton" type="submit">Ingresar</button>
+            </form>
+            <p id="login-mensaje" hidden></p>
+            <p class="texto-suave">¿No tienes cuenta? <button id="ir-registro" class="enlace" type="button">Regístrate como cliente</button></p>
+        </section>
+    </main>
+
+    <main id="vista-registro" class="pagina-auth" hidden>
+        <section class="auth">
+            <h1 class="marca">Crear cuenta de cliente</h1>
+            <form id="form-registro" class="formulario formulario-columna">
+                <label>Nombre<input name="nombre" required></label>
+                <label>Apellido<input name="apellido" required></label>
+                <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
+                <label>Celular<input name="celular" type="tel" placeholder="+573005698325" required></label>
+                <label>Correo<input name="correo" type="email" autocomplete="email" required></label>
+                <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
+                <button class="boton" type="submit">Registrarme</button>
+            </form>
+            <p id="registro-mensaje" hidden></p>
+            <p class="texto-suave"><button id="ir-login" class="enlace" type="button">Volver a iniciar sesión</button></p>
+        </section>
+    </main>
+
+    <main id="vista-ADMINISTRADOR" class="contenedor" hidden>
+        <section class="panel">
+            <h2>Crear propietario</h2>
+            <form id="form-propietario" class="formulario">
+                <label>Nombre<input name="nombre" required></label>
+                <label>Apellido<input name="apellido" required></label>
+                <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
+                <label>Celular<input name="celular" type="tel" placeholder="+573005698325" required></label>
+                <label>Fecha de nacimiento<input name="fechaNacimiento" type="date" required></label>
+                <label>Correo<input name="correo" type="email" required></label>
+                <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
+                <button class="boton" type="submit">Crear propietario</button>
+            </form>
+            <p id="admin-mensaje-propietario" hidden></p>
+        </section>
+
+        <section class="panel">
+            <h2>Crear restaurante</h2>
+            <form id="form-restaurante" class="formulario">
+                <label>Nombre<input name="nombre" required></label>
+                <label>NIT<input name="nit" inputmode="numeric" required></label>
+                <label>Dirección<input name="direccion" required></label>
+                <label>Teléfono<input name="telefono" type="tel" placeholder="+573005698325" required></label>
+                <label>URL del logo<input name="urlLogo" type="url" required></label>
+                <label>Id del propietario<input name="idPropietario" type="number" min="1" required></label>
+                <button class="boton" type="submit">Crear restaurante</button>
+            </form>
+            <p id="admin-mensaje-restaurante" hidden></p>
+        </section>
+    </main>
+
+    <main id="vista-PROPIETARIO" class="contenedor" hidden>
+        <section class="panel">
+            <h2>Mi restaurante</h2>
+            <p id="prop-mensaje-restaurante" hidden></p>
+            <div id="prop-restaurante" class="restaurante" hidden>
+                <img id="prop-logo" class="logo" alt="">
+                <div>
+                    <h3 id="prop-nombre"></h3>
+                    <p id="prop-detalle" class="texto-suave"></p>
+                </div>
+            </div>
+        </section>
+
+        <div id="prop-gestion" class="grupo-paneles" hidden>
+            <section class="panel">
+                <h2>Crear plato</h2>
+                <form id="form-plato" class="formulario">
+                    <label>Nombre<input name="nombre" required></label>
+                    <label>Precio<input name="precio" type="number" min="1" step="1" required></label>
+                    <label>Categoría<select name="idCategoria" class="selector-categoria" data-tipo="number" required></select></label>
+                    <label>URL de la imagen<input name="urlImagen" type="url" required></label>
+                    <label class="ancho-completo">Descripción<textarea name="descripcion" rows="2" required></textarea></label>
+                    <button class="boton" type="submit">Crear plato</button>
+                </form>
+                <p id="prop-mensaje-plato" hidden></p>
+            </section>
+
+            <section class="panel">
+                <div class="encabezado-panel">
+                    <h2>Mis platos</h2>
+                    <label class="filtro">Categoría
+                        <select id="prop-filtro-categoria" class="selector-categoria">
+                            <option value="">Todas</option>
+                        </select>
+                    </label>
+                </div>
+                <p id="prop-mensaje-platos" hidden></p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Plato</th><th>Categoría</th><th>Precio</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody id="prop-platos"></tbody>
+                    </table>
+                </div>
+                <nav id="prop-paginacion-platos" class="paginacion"></nav>
+            </section>
+
+            <section class="panel">
+                <h2>Crear empleado</h2>
+                <form id="form-empleado" class="formulario">
+                    <label>Nombre<input name="nombre" required></label>
+                    <label>Apellido<input name="apellido" required></label>
+                    <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
+                    <label>Celular<input name="celular" type="tel" placeholder="+573005698325" required></label>
+                    <label>Correo<input name="correo" type="email" required></label>
+                    <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
+                    <button class="boton" type="submit">Crear empleado</button>
+                </form>
+                <p id="prop-mensaje-empleado" hidden></p>
+            </section>
+
+            <section class="panel">
+                <div class="encabezado-panel">
+                    <h2>Eficiencia de pedidos</h2>
+                    <button id="prop-recargar-eficiencia" class="boton boton-secundario" type="button">Actualizar</button>
+                </div>
+                <p>Tiempo promedio del restaurante: <strong id="prop-promedio">-</strong></p>
+                <p id="prop-mensaje-eficiencia" hidden></p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Pedido</th><th>Creado</th><th>Entregado</th><th>Duración</th><th>Comparación</th></tr></thead>
+                        <tbody id="prop-eficiencia"></tbody>
+                    </table>
+                </div>
+                <nav id="prop-paginacion-eficiencia" class="paginacion"></nav>
+
+                <h3>Ranking de empleados</h3>
+                <p class="texto-suave">Tiempo medio entre "en preparación" y "listo" en pedidos entregados.</p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Posición</th><th>Empleado</th><th>Tiempo medio</th><th>Pedidos</th></tr></thead>
+                        <tbody id="prop-ranking"></tbody>
+                    </table>
+                </div>
+                <nav id="prop-paginacion-ranking" class="paginacion"></nav>
+            </section>
+        </div>
+    </main>
+
+    <main id="vista-EMPLEADO" class="contenedor" hidden>
+        <section class="panel">
+            <div class="encabezado-panel">
+                <h2>Pedidos de mi restaurante</h2>
+                <div class="fila">
+                    <label class="filtro">Estado
+                        <select id="empleado-filtro">
+                            <option value="">Todos</option>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="EN_PREPARACION">En preparación</option>
+                            <option value="LISTO">Listo</option>
+                            <option value="ENTREGADO">Entregado</option>
+                            <option value="CANCELADO">Cancelado</option>
+                        </select>
+                    </label>
+                    <button id="empleado-recargar" class="boton boton-secundario" type="button">Actualizar</button>
+                </div>
+            </div>
+            <p id="empleado-mensaje" hidden></p>
+            <div class="tabla-contenedor">
+                <table class="tabla">
+                    <thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Platos</th><th>Empleado</th><th>Acciones</th></tr></thead>
+                    <tbody id="empleado-pedidos"></tbody>
+                </table>
+            </div>
+            <nav id="empleado-paginacion" class="paginacion"></nav>
+        </section>
+    </main>
+
+    <main id="vista-CLIENTE" class="contenedor" hidden>
+        <section class="panel">
+            <h2>Restaurantes</h2>
+            <p id="cliente-mensaje-restaurantes" hidden></p>
+            <div id="cliente-restaurantes" class="grilla"></div>
+            <nav id="cliente-paginacion-restaurantes" class="paginacion"></nav>
+        </section>
+
+        <section id="cliente-menu" class="panel" hidden>
+            <div class="encabezado-panel">
+                <h2 id="cliente-titulo-menu"></h2>
+                <label class="filtro">Categoría
+                    <select id="cliente-filtro-categoria">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+            </div>
+            <p id="cliente-mensaje-menu" hidden></p>
+            <div id="cliente-platos" class="grilla"></div>
+            <nav id="cliente-paginacion-platos" class="paginacion"></nav>
+
+            <div class="carrito">
+                <h3>Tu pedido</h3>
+                <ul id="cliente-carrito" class="lista"></ul>
+                <p class="total">Total: <strong id="cliente-total"></strong></p>
+                <button id="cliente-enviar" class="boton" type="button" disabled>Enviar pedido</button>
+                <p id="cliente-mensaje-carrito" hidden></p>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="encabezado-panel">
+                <h2>Mis pedidos</h2>
+                <button id="cliente-recargar" class="boton boton-secundario" type="button">Actualizar</button>
+            </div>
+            <p id="cliente-mensaje-pedidos" hidden></p>
+            <div class="tabla-contenedor">
+                <table class="tabla">
+                    <thead><tr><th>Pedido</th><th>Fecha</th><th>Estado</th><th>Platos</th><th>Acciones</th></tr></thead>
+                    <tbody id="cliente-pedidos"></tbody>
+                </table>
+            </div>
+            <nav id="cliente-paginacion-pedidos" class="paginacion"></nav>
+        </section>
+
+        <section id="cliente-trazabilidad" class="panel" hidden>
+            <h2 id="cliente-titulo-trazabilidad"></h2>
+            <ol id="cliente-lista-trazabilidad" class="linea-tiempo"></ol>
+        </section>
+    </main>
+    <script>
+        "use strict";
+
+        const CONFIG = Object.freeze({
+            USUARIOS_URL: "http://localhost:8081",
+            PLAZOLETA_URL: "http://localhost:8082",
+            TRAZABILIDAD_URL: "http://localhost:8083"
+        });
+        const ROLES = Object.freeze({
+            ADMINISTRADOR: "ADMINISTRADOR",
+            PROPIETARIO: "PROPIETARIO",
+            EMPLEADO: "EMPLEADO",
+            CLIENTE: "CLIENTE"
+        });
+        const TOKEN_KEY = "plazoleta.token";
+        const HTTP_UNAUTHORIZED = 401;
+        const MILISEGUNDOS_POR_SEGUNDO = 1000;
+        const SEGUNDOS_POR_MINUTO = 60;
+        const TAMANO_GRILLA = 6;
+        const TAMANO_TABLA = 5;
+        const LONGITUD_PIN = 6;
+        const ESTADOS_FINALES = ["ENTREGADO", "CANCELADO"];
+        const MENSAJE_SIN_CONEXION = "No se pudo conectar con el servidor. Verifica que los microservicios estén encendidos.";
+        const FORMATO_PRECIO = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+
+        const cliente = { restaurante: null, categoriaId: "", paginaPedidos: 0, carrito: new Map() };
+        const empleado = { filtro: "", pagina: 0 };
+        const propietario = { restaurante: null, categorias: new Map(), categoriaId: "", paginaPlatos: 0 };
+
+        const $ = (selector) => document.querySelector(selector);
+
+        function h(tag, props = {}, ...children) {
+            const elemento = document.createElement(tag);
+            Object.entries(props).forEach(([clave, valor]) => {
+                if (clave.startsWith("on")) {
+                    elemento.addEventListener(clave.slice(2).toLowerCase(), valor);
+                } else if (clave === "className") {
+                    elemento.className = valor;
+                } else if (valor !== false && valor !== null && valor !== undefined) {
+                    elemento.setAttribute(clave, valor === true ? "" : valor);
+                }
+            });
+            elemento.append(...children.flat()
+                .filter((hijo) => hijo !== null && hijo !== undefined && hijo !== false)
+                .map((hijo) => (hijo instanceof Node ? hijo : document.createTextNode(String(hijo)))));
+            return elemento;
+        }
+
+        function mostrarMensaje(contenedor, texto, tipo = "error") {
+            contenedor.textContent = texto;
+            contenedor.className = `mensaje mensaje-${tipo}`;
+            contenedor.hidden = false;
+        }
+
+        async function ejecutar(contenedor, accion) {
+            contenedor.hidden = true;
+            try {
+                const texto = await accion();
+                if (texto) {
+                    mostrarMensaje(contenedor, texto, "exito");
+                }
+            } catch (error) {
+                mostrarMensaje(contenedor, error.message);
+            }
+        }
+
+        function alEnviar(selectorFormulario, selectorMensaje, accion) {
+            const formulario = $(selectorFormulario);
+            formulario.addEventListener("submit", async (evento) => {
+                evento.preventDefault();
+                const boton = formulario.querySelector("button[type=submit]");
+                boton.disabled = true;
+                await ejecutar($(selectorMensaje), async () => {
+                    const texto = await accion(datosDe(formulario));
+                    formulario.reset();
+                    return texto;
+                });
+                boton.disabled = false;
+            });
+        }
+
+        function datosDe(formulario) {
+            return Object.fromEntries([...formulario.elements]
+                .filter((campo) => campo.name)
+                .map((campo) => [campo.name, valorDe(campo)]));
+        }
+
+        function valorDe(campo) {
+            if (campo.type === "number" || campo.dataset.tipo === "number") {
+                return campo.value === "" ? null : Number(campo.value);
+            }
+            return campo.type === "password" ? campo.value : campo.value.trim();
+        }
+
+        function paginar(contenedor, pagina, alCambiar) {
+            contenedor.replaceChildren(
+                h("button", { type: "button", className: "boton boton-secundario", disabled: pagina.page === 0,
+                    onClick: () => alCambiar(pagina.page - 1) }, "Anterior"),
+                h("span", {}, `Página ${pagina.totalPages === 0 ? 0 : pagina.page + 1} de ${pagina.totalPages}`),
+                h("button", { type: "button", className: "boton boton-secundario",
+                    disabled: pagina.page + 1 >= pagina.totalPages, onClick: () => alCambiar(pagina.page + 1) }, "Siguiente"));
+        }
+
+        function llenarTabla(tbody, filas) {
+            const columnas = tbody.closest("table").querySelectorAll("th").length;
+            tbody.replaceChildren(...(filas.length ? filas
+                : [h("tr", {}, h("td", { colspan: columnas, className: "vacio" }, "No hay registros para mostrar"))]));
+        }
+
+        function boton(texto, onClick, clase = "boton") {
+            return h("button", { className: clase, type: "button", onClick }, texto);
+        }
+
+        const estadoBadge = (estado) => h("span", { className: `estado estado-${estado.toLowerCase()}` }, estado.replace("_", " "));
+        const formatoPrecio = (valor) => FORMATO_PRECIO.format(valor);
+        const formatoFecha = (iso) => new Date(iso).toLocaleString("es-CO");
+        const resumenPlatos = (pedido) => pedido.platos.map((plato) => `${plato.cantidad} × ${plato.nombre}`).join(", ");
+
+        function formatoDuracion(segundos) {
+            const total = Math.round(segundos);
+            const minutos = Math.floor(total / SEGUNDOS_POR_MINUTO);
+            return minutos > 0 ? `${minutos} min ${total % SEGUNDOS_POR_MINUTO} s` : `${total} s`;
+        }
+
+        function obtenerSesion() {
+            const token = sessionStorage.getItem(TOKEN_KEY);
+            if (!token) {
+                return null;
+            }
+            const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+            const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))));
+            if (payload.exp * MILISEGUNDOS_POR_SEGUNDO < Date.now()) {
+                sessionStorage.removeItem(TOKEN_KEY);
+                return null;
+            }
+            return { id: payload.id, correo: payload.sub, rol: payload.rol };
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem(TOKEN_KEY);
+            location.reload();
+        }
+
+        async function api(baseUrl, ruta, { method = "GET", body } = {}) {
+            const token = sessionStorage.getItem(TOKEN_KEY);
+            const headers = { "Content-Type": "application/json" };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+            let respuesta;
+            try {
+                respuesta = await fetch(baseUrl + ruta, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+            } catch {
+                throw new Error(MENSAJE_SIN_CONEXION);
+            }
+            const texto = await respuesta.text();
+            const datos = texto ? JSON.parse(texto) : null;
+            if (respuesta.status === HTTP_UNAUTHORIZED && token) {
+                cerrarSesion();
+            }
+            if (!respuesta.ok) {
+                throw new Error(datos?.mensaje ?? `Error ${respuesta.status}`);
+            }
+            return datos;
+        }
+
+        const usuariosApi = (ruta, opciones) => api(CONFIG.USUARIOS_URL, ruta, opciones);
+        const plazoletaApi = (ruta, opciones) => api(CONFIG.PLAZOLETA_URL, ruta, opciones);
+        const trazabilidadApi = (ruta, opciones) => api(CONFIG.TRAZABILIDAD_URL, ruta, opciones);
+
+        function mostrarVista(nombre) {
+            document.querySelectorAll("main").forEach((vista) => { vista.hidden = vista.id !== `vista-${nombre}`; });
+        }
+
+        function iniciarAplicacion() {
+            registrarEventos();
+            const sesion = obtenerSesion();
+            if (!sesion) {
+                mostrarVista("login");
+                return;
+            }
+            $("#barra").hidden = false;
+            $("#sesion").textContent = `${sesion.correo} · ${sesion.rol}`;
+            mostrarVista(sesion.rol);
+            ({
+                [ROLES.ADMINISTRADOR]: () => {},
+                [ROLES.PROPIETARIO]: iniciarPropietario,
+                [ROLES.EMPLEADO]: () => cargarPedidosEmpleado(0),
+                [ROLES.CLIENTE]: iniciarCliente
+            })[sesion.rol]();
+        }
+
+        function registrarEventos() {
+            $("#logout").addEventListener("click", cerrarSesion);
+            $("#ir-registro").addEventListener("click", () => mostrarVista("registro"));
+            $("#ir-login").addEventListener("click", () => mostrarVista("login"));
+            alEnviar("#form-login", "#login-mensaje", async (datos) => {
+                const sesion = await usuariosApi("/auth/login", { method: "POST", body: datos });
+                sessionStorage.setItem(TOKEN_KEY, sesion.token);
+                location.reload();
+            });
+            alEnviar("#form-registro", "#registro-mensaje", async (datos) => {
+                const usuario = await usuariosApi("/usuarios/cliente", { method: "POST", body: datos });
+                return `Cuenta creada con id ${usuario.id}. Ya puedes iniciar sesión.`;
+            });
+            alEnviar("#form-propietario", "#admin-mensaje-propietario", async (datos) => {
+                const usuario = await usuariosApi("/usuarios/propietario", { method: "POST", body: datos });
+                return `Propietario creado con id ${usuario.id}`;
+            });
+            alEnviar("#form-restaurante", "#admin-mensaje-restaurante", async (datos) => {
+                const restaurante = await plazoletaApi("/restaurantes", { method: "POST", body: datos });
+                return `Restaurante "${restaurante.nombre}" creado con id ${restaurante.id}`;
+            });
+            alEnviar("#form-plato", "#prop-mensaje-plato", crearPlato);
+            alEnviar("#form-empleado", "#prop-mensaje-empleado", async (datos) => {
+                const nuevo = await plazoletaApi("/empleados", { method: "POST", body: datos });
+                return `Empleado creado con id ${nuevo.id} y vinculado a tu restaurante`;
+            });
+            $("#prop-filtro-categoria").addEventListener("change", (evento) => {
+                propietario.categoriaId = evento.target.value;
+                cargarPlatosPropietario(0);
+            });
+            $("#prop-recargar-eficiencia").addEventListener("click", () => {
+                cargarEficiencia(0);
+                cargarRanking(0);
+            });
+            $("#empleado-filtro").addEventListener("change", (evento) => {
+                empleado.filtro = evento.target.value;
+                cargarPedidosEmpleado(0);
+            });
+            $("#empleado-recargar").addEventListener("click", () => cargarPedidosEmpleado(empleado.pagina));
+            $("#cliente-filtro-categoria").addEventListener("change", (evento) => {
+                cliente.categoriaId = evento.target.value;
+                cargarPlatosCliente(0);
+            });
+            $("#cliente-enviar").addEventListener("click", enviarPedido);
+            $("#cliente-recargar").addEventListener("click", () => cargarPedidosCliente(cliente.paginaPedidos));
+        }
+
+        async function cargarCategorias(selector, contenedorMensaje) {
+            await ejecutar(contenedorMensaje, async () => {
+                const categorias = await plazoletaApi("/categorias");
+                categorias.forEach((categoria) => propietario.categorias.set(categoria.id, categoria.nombre));
+                document.querySelectorAll(selector).forEach((select) =>
+                    select.append(...categorias.map((categoria) => h("option", { value: categoria.id }, categoria.nombre))));
+            });
+        }
+
+        async function iniciarPropietario() {
+            await ejecutar($("#prop-mensaje-restaurante"), async () => {
+                const restaurante = await plazoletaApi("/restaurantes/mio");
+                propietario.restaurante = restaurante;
+                $("#prop-logo").src = restaurante.urlLogo;
+                $("#prop-logo").alt = `Logo de ${restaurante.nombre}`;
+                $("#prop-nombre").textContent = restaurante.nombre;
+                $("#prop-detalle").textContent =
+                    `NIT ${restaurante.nit} · ${restaurante.direccion} · Tel. ${restaurante.telefono} · Id ${restaurante.id}`;
+                $("#prop-restaurante").hidden = false;
+            });
+            if (!propietario.restaurante) {
+                return;
+            }
+            $("#prop-gestion").hidden = false;
+            await cargarCategorias("#vista-PROPIETARIO .selector-categoria", $("#prop-mensaje-plato"));
+            cargarPlatosPropietario(0);
+            cargarEficiencia(0);
+            cargarRanking(0);
+        }
+
+        async function crearPlato(datos) {
+            const plato = await plazoletaApi("/platos", {
+                method: "POST",
+                body: { ...datos, idRestaurante: propietario.restaurante.id }
+            });
+            await cargarPlatosPropietario(propietario.paginaPlatos);
+            return `Plato "${plato.nombre}" creado con id ${plato.id}`;
+        }
+
+        function cargarPlatosPropietario(pagina) {
+            propietario.paginaPlatos = pagina;
+            return ejecutar($("#prop-mensaje-platos"), async () => {
+                const filtro = propietario.categoriaId ? `&categoriaId=${propietario.categoriaId}` : "";
+                const datos = await plazoletaApi(
+                    `/restaurantes/${propietario.restaurante.id}/platos?page=${pagina}&size=${TAMANO_TABLA}${filtro}`);
+                llenarTabla($("#prop-platos"), datos.content.map(filaPlatoPropietario));
+                paginar($("#prop-paginacion-platos"), datos, cargarPlatosPropietario);
+            });
+        }
+
+        function filaPlatoPropietario(plato) {
+            const precio = h("input", { type: "number", min: "1", step: "1", value: plato.precio, className: "precio-input",
+                "aria-label": `Precio de ${plato.nombre}` });
+            const descripcion = h("input", { value: plato.descripcion, "aria-label": `Descripción de ${plato.nombre}` });
+            return h("tr", {},
+                h("td", {}, plato.nombre),
+                h("td", {}, propietario.categorias.get(plato.idCategoria) ?? plato.idCategoria),
+                h("td", {}, precio, h("small", { className: "texto-suave" }, formatoPrecio(plato.precio))),
+                h("td", {}, descripcion),
+                h("td", {}, h("span", { className: plato.activo ? "estado estado-listo" : "estado estado-cancelado" },
+                    plato.activo ? "Activo" : "Inactivo")),
+                h("td", { className: "acciones" },
+                    boton("Guardar", () => modificarPlato(`/platos/${plato.id}`, "PUT",
+                        { precio: Number(precio.value), descripcion: descripcion.value.trim() },
+                        `Plato "${plato.nombre}" actualizado`)),
+                    boton(plato.activo ? "Desactivar" : "Activar", () => modificarPlato(`/platos/${plato.id}/estado`, "PATCH",
+                        { activo: !plato.activo }, `Plato "${plato.nombre}" ${plato.activo ? "desactivado" : "activado"}`),
+                    "boton boton-secundario")));
+        }
+
+        function modificarPlato(ruta, method, body, textoExito) {
+            return ejecutar($("#prop-mensaje-platos"), async () => {
+                await plazoletaApi(ruta, { method, body });
+                await cargarPlatosPropietario(propietario.paginaPlatos);
+                return textoExito;
+            });
+        }
+
+        function cargarEficiencia(pagina) {
+            return ejecutar($("#prop-mensaje-eficiencia"), async () => {
+                const datos = await trazabilidadApi(`/trazabilidad/eficiencia/pedidos?page=${pagina}&size=${TAMANO_TABLA}`);
+                $("#prop-promedio").textContent = formatoDuracion(datos.promedioSegundos);
+                llenarTabla($("#prop-eficiencia"), datos.pedidos.content.map((pedido) =>
+                    h("tr", { className: pedido.superaPromedio ? "fila-alerta" : null },
+                        h("td", {}, `#${pedido.idPedido}`),
+                        h("td", {}, formatoFecha(pedido.fechaInicio)),
+                        h("td", {}, formatoFecha(pedido.fechaEntrega)),
+                        h("td", {}, formatoDuracion(pedido.duracionSegundos)),
+                        h("td", {}, pedido.superaPromedio ? "Supera el promedio" : "Dentro del promedio"))));
+                paginar($("#prop-paginacion-eficiencia"), datos.pedidos, cargarEficiencia);
+            });
+        }
+
+        function cargarRanking(pagina) {
+            return ejecutar($("#prop-mensaje-eficiencia"), async () => {
+                const datos = await trazabilidadApi(`/trazabilidad/eficiencia/empleados?page=${pagina}&size=${TAMANO_TABLA}`);
+                llenarTabla($("#prop-ranking"), datos.content.map((fila) => h("tr", {},
+                    h("td", {}, fila.posicion),
+                    h("td", {}, fila.correoEmpleado ?? `Empleado ${fila.idEmpleado}`),
+                    h("td", {}, formatoDuracion(fila.promedioSegundos)),
+                    h("td", {}, fila.pedidosAtendidos))));
+                paginar($("#prop-paginacion-ranking"), datos, cargarRanking);
+            });
+        }
+
+        function cargarPedidosEmpleado(pagina) {
+            empleado.pagina = pagina;
+            return ejecutar($("#empleado-mensaje"), async () => {
+                const filtro = empleado.filtro ? `&estado=${empleado.filtro}` : "";
+                const datos = await plazoletaApi(`/pedidos?page=${pagina}&size=${TAMANO_TABLA}${filtro}`);
+                llenarTabla($("#empleado-pedidos"), datos.content.map((pedido) => h("tr", {},
+                    h("td", {}, `#${pedido.id}`),
+                    h("td", {}, formatoFecha(pedido.fecha)),
+                    h("td", {}, `Cliente ${pedido.idCliente}`),
+                    h("td", {}, estadoBadge(pedido.estado)),
+                    h("td", {}, resumenPlatos(pedido)),
+                    h("td", {}, pedido.idEmpleado ?? "Sin asignar"),
+                    h("td", { className: "acciones" }, accionesEmpleado(pedido)))));
+                paginar($("#empleado-paginacion"), datos, cargarPedidosEmpleado);
+            });
+        }
+
+        function accionesEmpleado(pedido) {
+            if (pedido.estado === "PENDIENTE") {
+                return boton("Asignarme", () => cambiarEstadoPedido(pedido.id, "asignar", undefined,
+                    `Pedido #${pedido.id} asignado. Ahora está en preparación.`));
+            }
+            if (pedido.estado === "EN_PREPARACION") {
+                return boton("Marcar listo", () => cambiarEstadoPedido(pedido.id, "listo", undefined,
+                    `Pedido #${pedido.id} listo. Se envió el PIN al cliente por SMS.`));
+            }
+            if (pedido.estado === "LISTO") {
+                const pin = h("input", { className: "pin", inputmode: "numeric", maxlength: LONGITUD_PIN, placeholder: "PIN",
+                    "aria-label": `PIN del pedido ${pedido.id}` });
+                return h("div", { className: "fila" }, pin, boton("Entregar", () => cambiarEstadoPedido(pedido.id, "entregar",
+                    { pin: pin.value.trim() }, `Pedido #${pedido.id} entregado.`)));
+            }
+            return h("span", { className: "texto-suave" }, "Sin acciones");
+        }
+
+        function cambiarEstadoPedido(idPedido, accion, body, textoExito) {
+            return ejecutar($("#empleado-mensaje"), async () => {
+                await plazoletaApi(`/pedidos/${idPedido}/${accion}`, { method: "PATCH", body });
+                await cargarPedidosEmpleado(empleado.pagina);
+                return textoExito;
+            });
+        }
+
+        function iniciarCliente() {
+            cargarRestaurantes(0);
+            cargarCategorias("#cliente-filtro-categoria", $("#cliente-mensaje-menu"));
+            cargarPedidosCliente(0);
+        }
+
+        function cargarRestaurantes(pagina) {
+            return ejecutar($("#cliente-mensaje-restaurantes"), async () => {
+                const datos = await plazoletaApi(`/restaurantes?page=${pagina}&size=${TAMANO_GRILLA}`);
+                $("#cliente-restaurantes").replaceChildren(...datos.content.map((restaurante) =>
+                    h("article", { className: "tarjeta" },
+                        h("img", { className: "tarjeta-imagen", src: restaurante.urlLogo, alt: `Logo de ${restaurante.nombre}` }),
+                        h("h3", {}, restaurante.nombre),
+                        boton("Ver menú", () => seleccionarRestaurante(restaurante)))));
+                paginar($("#cliente-paginacion-restaurantes"), datos, cargarRestaurantes);
+                return datos.totalElements === 0 ? "Aún no hay restaurantes registrados" : null;
+            });
+        }
+
+        function seleccionarRestaurante(restaurante) {
+            cliente.restaurante = restaurante;
+            cliente.carrito.clear();
+            $("#cliente-menu").hidden = false;
+            $("#cliente-titulo-menu").textContent = `Menú de ${restaurante.nombre}`;
+            mostrarCarrito();
+            cargarPlatosCliente(0);
+            $("#cliente-menu").scrollIntoView({ behavior: "smooth" });
+        }
+
+        function cargarPlatosCliente(pagina) {
+            return ejecutar($("#cliente-mensaje-menu"), async () => {
+                const filtro = cliente.categoriaId ? `&categoriaId=${cliente.categoriaId}` : "";
+                const datos = await plazoletaApi(
+                    `/restaurantes/${cliente.restaurante.id}/platos?page=${pagina}&size=${TAMANO_GRILLA}${filtro}`);
+                $("#cliente-platos").replaceChildren(...datos.content.map(tarjetaPlato));
+                paginar($("#cliente-paginacion-platos"), datos, cargarPlatosCliente);
+                return datos.totalElements === 0 ? "No hay platos disponibles con este filtro" : null;
+            });
+        }
+
+        function tarjetaPlato(plato) {
+            const cantidad = h("input", { type: "number", min: "1", value: "1", className: "cantidad",
+                "aria-label": `Cantidad de ${plato.nombre}` });
+            return h("article", { className: "tarjeta" },
+                h("img", { className: "tarjeta-imagen", src: plato.urlImagen, alt: plato.nombre }),
+                h("h3", {}, plato.nombre),
+                h("p", { className: "texto-suave" }, plato.descripcion),
+                h("p", { className: "precio" }, formatoPrecio(plato.precio)),
+                h("div", { className: "fila" }, cantidad, boton("Agregar", () => {
+                    const actual = cliente.carrito.get(plato.id)?.cantidad ?? 0;
+                    cliente.carrito.set(plato.id, { plato, cantidad: actual + Number(cantidad.value) });
+                    mostrarCarrito();
+                })));
+        }
+
+        function mostrarCarrito() {
+            const items = [...cliente.carrito.values()];
+            $("#cliente-carrito").replaceChildren(...items.map((item) => h("li", { className: "fila fila-espaciada" },
+                `${item.cantidad} × ${item.plato.nombre}`,
+                h("span", { className: "precio" }, formatoPrecio(item.cantidad * item.plato.precio)),
+                boton("Quitar", () => {
+                    cliente.carrito.delete(item.plato.id);
+                    mostrarCarrito();
+                }, "boton boton-secundario"))));
+            $("#cliente-total").textContent = formatoPrecio(items.reduce((total, item) => total + item.cantidad * item.plato.precio, 0));
+            $("#cliente-enviar").disabled = items.length === 0;
+        }
+
+        function enviarPedido() {
+            return ejecutar($("#cliente-mensaje-carrito"), async () => {
+                const platos = [...cliente.carrito.values()].map((item) => ({ idPlato: item.plato.id, cantidad: item.cantidad }));
+                const pedido = await plazoletaApi("/pedidos", {
+                    method: "POST",
+                    body: { idRestaurante: cliente.restaurante.id, platos }
+                });
+                cliente.carrito.clear();
+                mostrarCarrito();
+                await cargarPedidosCliente(0);
+                return `Pedido #${pedido.id} creado. Estado: ${pedido.estado}`;
+            });
+        }
+
+        function cargarPedidosCliente(pagina) {
+            cliente.paginaPedidos = pagina;
+            return ejecutar($("#cliente-mensaje-pedidos"), async () => {
+                const datos = await plazoletaApi(`/pedidos/mis-pedidos?page=${pagina}&size=${TAMANO_TABLA}`);
+                llenarTabla($("#cliente-pedidos"), datos.content.map((pedido) => h("tr", {},
+                    h("td", {}, `#${pedido.id}`),
+                    h("td", {}, formatoFecha(pedido.fecha)),
+                    h("td", {}, estadoBadge(pedido.estado)),
+                    h("td", {}, resumenPlatos(pedido)),
+                    h("td", { className: "acciones" },
+                        ESTADOS_FINALES.includes(pedido.estado) ? null
+                            : boton("Cancelar", () => cancelarPedido(pedido.id), "boton boton-peligro"),
+                        boton("Trazabilidad", () => verTrazabilidad(pedido.id), "boton boton-secundario")))));
+                paginar($("#cliente-paginacion-pedidos"), datos, cargarPedidosCliente);
+            });
+        }
+
+        function cancelarPedido(idPedido) {
+            return ejecutar($("#cliente-mensaje-pedidos"), async () => {
+                await plazoletaApi(`/pedidos/${idPedido}/cancelar`, { method: "PATCH" });
+                await cargarPedidosCliente(cliente.paginaPedidos);
+                return `Pedido #${idPedido} cancelado`;
+            });
+        }
+
+        function verTrazabilidad(idPedido) {
+            return ejecutar($("#cliente-mensaje-pedidos"), async () => {
+                const historial = await trazabilidadApi(`/trazabilidad/pedidos/${idPedido}`);
+                $("#cliente-titulo-trazabilidad").textContent = `Trazabilidad del pedido #${idPedido}`;
+                $("#cliente-lista-trazabilidad").replaceChildren(...historial.map((cambio) => h("li", {},
+                    estadoBadge(cambio.estadoNuevo),
+                    h("span", {}, formatoFecha(cambio.fecha)),
+                    h("span", { className: "texto-suave" }, cambio.duracionSegundos === null ? "Estado final"
+                        : `Tiempo en este estado: ${formatoDuracion(cambio.duracionSegundos)}`),
+                    cambio.correoEmpleado ? h("span", { className: "texto-suave" }, `Empleado: ${cambio.correoEmpleado}`) : null)));
+                $("#cliente-trazabilidad").hidden = false;
+                $("#cliente-trazabilidad").scrollIntoView({ behavior: "smooth" });
+            });
+        }
+
+        iniciarAplicacion();
+    </script>
+</body>
+</html>

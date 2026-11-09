@@ -1,0 +1,44 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: mensajeria
+  profiles:
+    default: local
+  autoconfigure:
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+
+cors:
+  allowed-origins: http://localhost:8082,http://127.0.0.1:8082,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8383,http://127.0.0.1:8383
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+jwt:
+  secret: ${JWT_SECRET:plazoleta-local-jwt-secret-cambiar-en-produccion-2026}
+sms:
+  provider: log
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+jwt:
+  secret: ${JWT_SECRET}
+sms:
+  provider: twilio
+twilio:
+  base-url: https://api.twilio.com
+  account-sid: ${TWILIO_ACCOUNT_SID}
+  auth-token: ${TWILIO_AUTH_TOKEN}
+  from-number: ${TWILIO_FROM_NUMBER}
