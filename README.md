@@ -31,7 +31,7 @@ Restaurantes, menú, carrito, pedidos con **PIN por SMS real**, trazabilidad y e
 |-----------|---------|------------------|
 | **JDK** (Java) | 17 o superior (probado con 21) | `java -version` |
 | **Git** | cualquiera | `git --version` |
-| **Internet** | solo la primera vez, para descargar dependencias, y para los SMS reales | |
+| **Internet** | Pues, obviamente  | |
 | **Puertos libres** | 8081, 8082, 8083 y 8084 | |
 
 > No hace falta instalar Maven: el proyecto trae el **Maven Wrapper** (`mvnw` en Linux/macOS, `mvnw.cmd` en Windows).
