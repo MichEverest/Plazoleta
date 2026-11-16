@@ -24,17 +24,18 @@ Puerto: `8081`.
 
 | Recurso     | URL                                      |
 |-------------|------------------------------------------|
+| Consola web | http://localhost:8081                    |
 | Swagger UI  | http://localhost:8081/swagger-ui.html    |
 | OpenAPI     | http://localhost:8081/v3/api-docs        |
 | Consola H2  | http://localhost:8081/h2-console (solo perfil `local`) |
 
-Consola H2: JDBC URL `jdbc:h2:file:./data/usuarios`, usuario `sa`, sin clave.
+Consola H2: la conexión ya viene escrita (`jdbc:h2:file:./data/usuarios;AUTO_SERVER=TRUE`, usuario `sa`, sin clave); solo pulsa *Conectar*.
 
 ## Perfiles
 
 | Perfil  | Base de datos | Notas |
 |---------|---------------|-------|
-| `local` (por defecto) | H2 en archivo `./data/usuarios`, `ddl-auto=update` | Consola H2 habilitada |
+| `local` (por defecto) | H2 en archivo `./data/usuarios` (con `AUTO_SERVER=TRUE`), `ddl-auto=update` | Consola H2 habilitada |
 | `prod`  | MySQL | Variables `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, opcional `DDL_AUTO` (por defecto `update`) |
 
 ```bash
@@ -46,22 +47,24 @@ DB_USERNAME=root DB_PASSWORD=secreto ./mvnw spring-boot:run
 
 | Propiedad | Por defecto | Descripción |
 |-----------|-------------|-------------|
-| `cors.allowed-origins` | `http://localhost:5500,http://127.0.0.1:5500,http://localhost:8383,http://127.0.0.1:8383` | Orígenes CORS separados por coma |
+| `cors.allowed-origins` | puertos 8081 a 8084 (las 4 consolas), 5500 y 8383 | Orígenes CORS separados por coma |
 | `seed.enabled` | `true` | Inserta roles y usuarios iniciales si no existen |
+| `seed.celular-para-clientes` | `CELULAR_CLIENTES` o `3023066544` (solo `local`) | Celular que se asigna a todos los clientes en cada arranque, para que los PIN de prueba lleguen a un solo teléfono. Vacío = cada cliente conserva el suyo. El personal sembrado usa `3022249736` |
 | `jwt.secret` | `JWT_SECRET` (con valor por defecto solo en `local`) | Secreto HMAC compartido por los 4 servicios |
 | `jwt.expiration-minutes` | `JWT_EXPIRATION_MINUTES` o `60` | Vigencia del token |
 
 ## Usuarios iniciales (seeds)
 
-Se insertan al arrancar si no existen (se verifica por correo). Todos con clave `Clave123*` y fecha de nacimiento `1995-01-01`.
+Se insertan al arrancar si no existen. Se buscan por número de documento: si el usuario ya existe con otro nombre o correo (por ejemplo, de una versión anterior con `@plazoleta.com`), se corrige. Todos con clave `Clave123*` y fecha de nacimiento `1995-01-01`.
 
 | Id | Nombre | Rol | Correo | Documento | Celular | Clave |
 |----|--------|-----|--------|-----------|---------|-------|
-| 1 | Mich Everest | ADMINISTRADOR | mich@plazoleta.com | 1000000001 | +573000000001 | Clave123* |
-| 2 | Cartheyia Plazoleta | PROPIETARIO | cartheyia@plazoleta.com | 1000000002 | +573000000002 | Clave123* |
-| 3 | Jean Plazoleta | CLIENTE | jean@plazoleta.com | 1000000003 | +573000000003 | Clave123* |
+| 1 | Mich Everest | ADMINISTRADOR | mich@gmail.com | 1000000001 | 3022249736 | Clave123* |
+| 2 | Cartethyia Plazoleta | PROPIETARIO | cartethyia@gmail.com | 1000000002 | 3022249736 | Clave123* |
+| 3 | Jean Plazoleta | CLIENTE | jean@gmail.com | 1000000003 | 3023066544 | Clave123* |
+| 4 | Mari Plazoleta | EMPLEADO | mari@gmail.com | 1000000004 | 3022249736 | Clave123* |
 
-Los ids 1, 2 y 3 se garantizan sobre una base de datos vacía. Roles: `ADMINISTRADOR` (1), `PROPIETARIO` (2), `EMPLEADO` (3), `CLIENTE` (4).
+Los ids 1 a 4 se garantizan sobre una base de datos vacía. Plazoleta usa el id 2 (Cartethyia) como dueña del restaurante sembrado y el 4 (Mari) como su empleada.
 
 ## Endpoints
 
@@ -71,7 +74,10 @@ Los ids 1, 2 y 3 se garantizan sobre una base de datos vacía. Roles: `ADMINISTR
 | POST | `/usuarios/propietario` | ADMINISTRADOR | HU1. Crea un propietario mayor de edad. Responde `201 {"id": n}` |
 | POST | `/usuarios/empleado` | PROPIETARIO | HU6. Crea un empleado (rol asignado por el sistema). Lo invoca Plazoleta |
 | POST | `/usuarios/cliente` | Público | HU8. Registro de cliente (rol asignado por el sistema) |
+| GET | `/usuarios` | ADMINISTRADOR | Lista todos los usuarios ordenados por id (la usa la consola web) |
 | GET | `/usuarios/{id}` | Autenticado | `{id, nombre, correo, celular, rol}`. Lo usan los otros servicios |
+
+El celular es colombiano: 10 dígitos que empiezan por 3, **sin +57** (ej. `3023066544`). Los celulares guardados con `+57` por versiones anteriores se corrigen solos al arrancar.
 
 Ejemplo de cuerpo de `/usuarios/propietario` (empleado y cliente usan los mismos campos sin `fechaNacimiento`):
 
@@ -80,12 +86,21 @@ Ejemplo de cuerpo de `/usuarios/propietario` (empleado y cliente usan los mismos
   "nombre": "Ana",
   "apellido": "Gomez",
   "numeroDocumento": "1234567890",
-  "celular": "+573005698325",
+  "celular": "3005698325",
   "fechaNacimiento": "1990-05-20",
-  "correo": "ana@correo.com",
+  "correo": "ana@gmail.com",
   "clave": "Clave123*"
 }
 ```
+
+## Consola web
+
+`src/main/resources/front/` (`index.html` y `styles.css`), servida en http://localhost:8081:
+
+- Sin sesión: login, botones *Entrar* con los usuarios de prueba y registro de cliente (HU8).
+- Con sesión: datos del token (con botón para copiarlo y pegarlo en Swagger) y consulta de usuario por id.
+- ADMINISTRADOR: tabla de usuarios registrados y creación de propietarios (HU1).
+- PROPIETARIO: creación directa de un usuario empleado (sin vincularlo a un restaurante; para eso está la consola de Plazoleta).
 
 ## Errores
 

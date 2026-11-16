@@ -40,7 +40,7 @@ class RestauranteUseCaseTest {
 
     @Test
     void crearGuardaSiPropietarioEsValido() {
-        Restaurante restaurante = restaurante("Sabores de Cartheyia", "900123456", "+573001234567");
+        Restaurante restaurante = restaurante("Sabores de Cartethyia", "900123456", "6044441234");
         when(serviciosExternosPort.buscarUsuario(ID_PROPIETARIO)).thenReturn(Optional.of(usuario(Usuario.Rol.PROPIETARIO)));
         when(restauranteRepositoryPort.guardar(restaurante)).thenReturn(restaurante);
 
@@ -49,7 +49,7 @@ class RestauranteUseCaseTest {
 
     @Test
     void crearPermiteNombreConNumeros() {
-        Restaurante restaurante = restaurante("Pizza 24", "900123456", "+573001234567");
+        Restaurante restaurante = restaurante("Pizza 24", "900123456", "6044441234");
         when(serviciosExternosPort.buscarUsuario(ID_PROPIETARIO)).thenReturn(Optional.of(usuario(Usuario.Rol.PROPIETARIO)));
         when(restauranteRepositoryPort.guardar(restaurante)).thenReturn(restaurante);
 
@@ -58,7 +58,7 @@ class RestauranteUseCaseTest {
 
     @Test
     void crearFallaSiFaltaDireccion() {
-        Restaurante restaurante = new Restaurante(null, "Sabores", "900123456", "", "+573001234567", "logo", ID_PROPIETARIO);
+        Restaurante restaurante = new Restaurante(null, "Sabores", "900123456", "", "6044441234", "logo", ID_PROPIETARIO);
 
         assertThrows(ValidacionException.class, () -> restauranteUseCase.crear(restaurante));
         verify(restauranteRepositoryPort, never()).guardar(any());
@@ -67,19 +67,25 @@ class RestauranteUseCaseTest {
     @Test
     void crearFallaSiNombreEsSoloNumeros() {
         assertThrows(ValidacionException.class,
-                () -> restauranteUseCase.crear(restaurante("12345", "900123456", "+573001234567")));
+                () -> restauranteUseCase.crear(restaurante("12345", "900123456", "6044441234")));
     }
 
     @Test
     void crearFallaSiNitNoEsNumerico() {
         assertThrows(ValidacionException.class,
-                () -> restauranteUseCase.crear(restaurante("Sabores", "90012-3", "+573001234567")));
+                () -> restauranteUseCase.crear(restaurante("Sabores", "90012-3", "6044441234")));
+    }
+
+    @Test
+    void crearFallaSiTelefonoNoTieneDiezDigitos() {
+        assertThrows(ValidacionException.class,
+                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "604444")));
     }
 
     @Test
     void crearFallaSiTelefonoEsInvalido() {
         assertThrows(ValidacionException.class,
-                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "+5730000000011")));
+                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "+573000000001")));
     }
 
     @Test
@@ -87,7 +93,7 @@ class RestauranteUseCaseTest {
         when(restauranteRepositoryPort.existeNit("900123456")).thenReturn(true);
 
         assertThrows(ConflictoException.class,
-                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "+573001234567")));
+                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "6044441234")));
     }
 
     @Test
@@ -95,7 +101,7 @@ class RestauranteUseCaseTest {
         when(serviciosExternosPort.buscarUsuario(ID_PROPIETARIO)).thenReturn(Optional.empty());
 
         assertThrows(NoEncontradoException.class,
-                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "+573001234567")));
+                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "6044441234")));
     }
 
     @Test
@@ -103,7 +109,7 @@ class RestauranteUseCaseTest {
         when(serviciosExternosPort.buscarUsuario(ID_PROPIETARIO)).thenReturn(Optional.of(usuario(Usuario.Rol.CLIENTE)));
 
         assertThrows(ValidacionException.class,
-                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "+573001234567")));
+                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "6044441234")));
         verify(restauranteRepositoryPort, never()).guardar(any());
     }
 
@@ -113,12 +119,12 @@ class RestauranteUseCaseTest {
         when(restauranteRepositoryPort.existeDePropietario(ID_PROPIETARIO)).thenReturn(true);
 
         assertThrows(ConflictoException.class,
-                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "+573001234567")));
+                () -> restauranteUseCase.crear(restaurante("Sabores", "900123456", "6044441234")));
     }
 
     @Test
     void consultarDePropietarioRetornaSuRestaurante() {
-        Restaurante restaurante = restaurante("Sabores", "900123456", "+573001234567");
+        Restaurante restaurante = restaurante("Sabores", "900123456", "6044441234");
         when(restauranteRepositoryPort.buscarPorPropietario(ID_PROPIETARIO)).thenReturn(Optional.of(restaurante));
 
         assertEquals(restaurante, restauranteUseCase.consultarDePropietario(ID_PROPIETARIO));
@@ -170,7 +176,7 @@ class RestauranteUseCaseTest {
     }
 
     private Usuario usuario(Usuario.Rol rol) {
-        return new Usuario(ID_PROPIETARIO, "Cartheyia", "Plazoleta", "1000000002", "+573000000002",
-                "cartheyia@plazoleta.com", "Clave123*", rol);
+        return new Usuario(ID_PROPIETARIO, "Cartethyia", "Plazoleta", "1000000002", "3000000002",
+                "cartethyia@gmail.com", "Clave123*", rol);
     }
 }

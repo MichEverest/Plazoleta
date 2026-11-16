@@ -39,11 +39,23 @@ public class ServiciosExternosAdapter implements ServiciosExternosPort {
     @FeignClient(name = "mensajeria", url = "${services.mensajeria.url}")
     public interface MensajeriaClient {
 
-        record SmsRequest(String celular, String mensaje) {
+        record PinRequest(String celular, String mensaje, String pin) {
         }
 
-        @PostMapping("/mensajes/sms")
-        void enviarSms(@RequestBody SmsRequest request);
+        record PinResponse(boolean verificacionExterna) {
+        }
+
+        record VerificacionRequest(String celular, String codigo) {
+        }
+
+        record VerificacionResponse(boolean valido) {
+        }
+
+        @PostMapping("/mensajes/pin")
+        PinResponse enviarPin(@RequestBody PinRequest request);
+
+        @PostMapping("/mensajes/pin/verificacion")
+        VerificacionResponse verificarPin(@RequestBody VerificacionRequest request);
     }
 
     @FeignClient(name = "trazabilidad", url = "${services.trazabilidad.url}")
@@ -51,7 +63,7 @@ public class ServiciosExternosAdapter implements ServiciosExternosPort {
 
         record CambioEstadoRequest(Long idPedido, Long idCliente, String correoCliente, Long idRestaurante,
                                    Pedido.Estado estadoAnterior, Pedido.Estado estadoNuevo, Long idEmpleado,
-                                   String correoEmpleado) {
+                                   String correoEmpleado, Boolean conSms) {
         }
 
         @PostMapping("/trazabilidad")
@@ -87,14 +99,19 @@ public class ServiciosExternosAdapter implements ServiciosExternosPort {
     }
 
     @Override
-    public void enviarSms(String celular, String mensaje) {
-        mensajeriaClient.enviarSms(new MensajeriaClient.SmsRequest(celular, mensaje));
+    public boolean enviarPin(String celular, String mensaje, String pin) {
+        return mensajeriaClient.enviarPin(new MensajeriaClient.PinRequest(celular, mensaje, pin)).verificacionExterna();
+    }
+
+    @Override
+    public boolean verificarPinExterno(String celular, String codigo) {
+        return mensajeriaClient.verificarPin(new MensajeriaClient.VerificacionRequest(celular, codigo)).valido();
     }
 
     @Override
     public void registrarCambioEstado(Pedido.CambioEstado cambio) {
         trazabilidadClient.registrar(new TrazabilidadClient.CambioEstadoRequest(cambio.idPedido(), cambio.idCliente(),
                 cambio.correoCliente(), cambio.idRestaurante(), cambio.estadoAnterior(), cambio.estadoNuevo(),
-                cambio.idEmpleado(), cambio.correoEmpleado()));
+                cambio.idEmpleado(), cambio.correoEmpleado(), cambio.conSms()));
     }
 }

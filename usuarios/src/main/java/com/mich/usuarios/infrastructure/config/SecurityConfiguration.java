@@ -30,6 +30,7 @@ import java.util.List;
 @Configuration
 public class SecurityConfiguration {
 
+    private static final String[] RUTAS_FRONT = {"/", "/index.html", "/styles.css"};
     private static final String[] RUTAS_SWAGGER = {"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"};
     private static final String RUTA_H2_CONSOLE = "/h2-console/**";
     private static final List<String> METODOS_PERMITIDOS = List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
@@ -65,6 +66,7 @@ public class SecurityConfiguration {
                         .accessDeniedHandler((request, response, ex) ->
                                 escribirError(response, MENSAJE_SIN_PERMISOS, HttpStatus.FORBIDDEN)))
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.GET, RUTAS_FRONT).permitAll();
                     auth.requestMatchers(RUTAS_SWAGGER).permitAll();
                     if (h2ConsoleEnabled) {
                         auth.requestMatchers(RUTA_H2_CONSOLE).permitAll();
@@ -72,6 +74,7 @@ public class SecurityConfiguration {
                     auth.requestMatchers(HttpMethod.POST, "/auth/login", "/usuarios/cliente").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/usuarios/propietario").hasRole(Rol.ADMINISTRADOR.name());
                     auth.requestMatchers(HttpMethod.POST, "/usuarios/empleado").hasRole(Rol.PROPIETARIO.name());
+                    auth.requestMatchers(HttpMethod.GET, "/usuarios").hasRole(Rol.ADMINISTRADOR.name());
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtService.filtro(), UsernamePasswordAuthenticationFilter.class);

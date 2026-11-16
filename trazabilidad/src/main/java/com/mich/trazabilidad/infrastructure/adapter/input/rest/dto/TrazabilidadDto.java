@@ -12,20 +12,32 @@ public final class TrazabilidadDto {
     }
 
     public record Request(Long idPedido, Long idCliente, String correoCliente, Long idRestaurante,
-                          Estado estadoAnterior, Estado estadoNuevo, Long idEmpleado, String correoEmpleado) {
+                          Estado estadoAnterior, Estado estadoNuevo, Long idEmpleado, String correoEmpleado,
+                          Boolean conSms) {
 
         public Trazabilidad toDomain() {
-            return new Trazabilidad(null, idPedido, idCliente, correoCliente, idRestaurante, null, estadoAnterior,
-                    estadoNuevo, idEmpleado, correoEmpleado);
+            Trazabilidad trazabilidad = new Trazabilidad(null, idPedido, idCliente, correoCliente, idRestaurante, null,
+                    estadoAnterior, estadoNuevo, idEmpleado, correoEmpleado);
+            trazabilidad.setConSms(conSms);
+            return trazabilidad;
         }
     }
 
     public record Historial(Estado estadoAnterior, Estado estadoNuevo, LocalDateTime fecha, String correoEmpleado,
-                            Long duracionSegundos) {
+                            Long duracionSegundos, Boolean conSms) {
 
         public static Historial de(Trazabilidad.Historial historial) {
             return new Historial(historial.estadoAnterior(), historial.estadoNuevo(), historial.fecha(),
-                    historial.correoEmpleado(), historial.duracionSegundos());
+                    historial.correoEmpleado(), historial.duracionSegundos(), historial.conSms());
+        }
+    }
+
+    public record ResumenPedido(Long idPedido, Long idRestaurante, Estado estadoActual, LocalDateTime fechaCreacion,
+                                LocalDateTime fechaUltimoCambio) {
+
+        public static ResumenPedido de(Trazabilidad.Resumen resumen) {
+            return new ResumenPedido(resumen.idPedido(), resumen.idRestaurante(), resumen.estadoActual(),
+                    resumen.fechaCreacion(), resumen.fechaUltimoCambio());
         }
     }
 

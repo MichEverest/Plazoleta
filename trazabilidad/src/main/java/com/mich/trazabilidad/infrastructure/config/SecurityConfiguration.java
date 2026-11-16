@@ -31,6 +31,7 @@ public class SecurityConfiguration {
 
     private static final String PROPIETARIO = "PROPIETARIO";
     private static final String CLIENTE = "CLIENTE";
+    private static final String[] RUTAS_FRONT = {"/", "/index.html", "/styles.css"};
     private static final String[] RUTAS_SWAGGER = {"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"};
     private static final String RUTA_H2_CONSOLE = "/h2-console/**";
     private static final List<String> METODOS_PERMITIDOS = List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
@@ -66,11 +67,12 @@ public class SecurityConfiguration {
                         .accessDeniedHandler((request, response, ex) ->
                                 escribirError(response, MENSAJE_SIN_PERMISOS, HttpStatus.FORBIDDEN)))
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.GET, RUTAS_FRONT).permitAll();
                     auth.requestMatchers(RUTAS_SWAGGER).permitAll();
                     if (h2ConsoleEnabled) {
                         auth.requestMatchers(RUTA_H2_CONSOLE).permitAll();
                     }
-                    auth.requestMatchers(HttpMethod.GET, "/trazabilidad/pedidos/*").hasRole(CLIENTE);
+                    auth.requestMatchers(HttpMethod.GET, "/trazabilidad/pedidos", "/trazabilidad/pedidos/*").hasRole(CLIENTE);
                     auth.requestMatchers(HttpMethod.GET, "/trazabilidad/eficiencia/**").hasRole(PROPIETARIO);
                     auth.anyRequest().authenticated();
                 })

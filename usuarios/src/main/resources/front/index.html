@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consola de Usuarios</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="barra">
+        <span class="marca">Usuarios · 8081</span>
+        <nav class="servicios" aria-label="Consolas de los microservicios">
+            <a href="http://localhost:8082">Plazoleta</a>
+            <a href="http://localhost:8081" aria-current="page">Usuarios</a>
+            <a href="http://localhost:8083">Trazabilidad</a>
+            <a href="http://localhost:8084">Mensajería</a>
+            <a href="/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+        </nav>
+        <div id="barra-sesion" class="barra-sesion" hidden>
+            <span id="sesion"></span>
+            <button id="logout" class="boton boton-secundario" type="button">Salir</button>
+        </div>
+    </header>
+
+    <main class="contenedor">
+        <section class="panel intro">
+            <h1>Microservicio de Usuarios</h1>
+            <p class="texto-suave">Registro de usuarios por rol, inicio de sesión con JWT y consulta de usuarios.
+                El token que emite este servicio lo validan los otros tres.</p>
+        </section>
+
+        <div id="vista-publica" class="columnas" hidden>
+            <section class="panel">
+                <h2>Iniciar sesión</h2>
+                <form id="form-login" class="formulario formulario-columna">
+                    <label>Correo<input name="correo" type="email" autocomplete="username" required></label>
+                    <label>Clave<input name="clave" type="password" autocomplete="current-password" required></label>
+                    <button class="boton" type="submit">Ingresar</button>
+                </form>
+                <p id="login-mensaje" hidden></p>
+            </section>
+
+            <section class="panel">
+                <h2>Usuarios de prueba</h2>
+                <p class="texto-suave">Se crean al arrancar. Todos tienen la clave <code>Clave123*</code>.</p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Usuario</th><th>Rol</th><th>Correo</th><th></th></tr></thead>
+                        <tbody id="usuarios-prueba"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel ancho-completo">
+                <h2>Registrarme como cliente (HU8)</h2>
+                <form id="form-registro" class="formulario">
+                    <label>Nombre<input name="nombre" required></label>
+                    <label>Apellido<input name="apellido" required></label>
+                    <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
+                    <label>Celular (sin +57)<input name="celular" type="tel" inputmode="numeric" pattern="3[0-9]{9}" maxlength="10" placeholder="3023066544" title="Celular colombiano: 10 dígitos que empiezan por 3, sin +57" required></label>
+                    <label>Correo<input name="correo" type="email" placeholder="nombre@gmail.com" required></label>
+                    <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
+                    <button class="boton" type="submit">Registrarme</button>
+                </form>
+                <p id="registro-mensaje" hidden></p>
+            </section>
+        </div>
+
+        <div id="vista-privada" class="pila" hidden>
+            <div class="columnas">
+                <section class="panel">
+                    <h2>Mi sesión</h2>
+                    <dl class="datos">
+                        <dt>Id</dt><dd id="sesion-id"></dd>
+                        <dt>Correo</dt><dd id="sesion-correo"></dd>
+                        <dt>Rol</dt><dd id="sesion-rol"></dd>
+                        <dt>Vence</dt><dd id="sesion-vence"></dd>
+                    </dl>
+                    <label><span>Token JWT (para Swagger: botón <em>Authorize</em>)</span>
+                        <textarea id="sesion-token" class="codigo" rows="4" readonly></textarea>
+                    </label>
+                    <div class="fila" style="margin-top: 0.75rem">
+                        <button id="copiar-token" class="boton boton-secundario" type="button">Copiar token</button>
+                    </div>
+                    <p id="token-mensaje" hidden></p>
+                </section>
+
+                <section class="panel">
+                    <h2>Consultar usuario por id</h2>
+                    <form id="form-consulta" class="formulario">
+                        <label>Id del usuario<input name="id" type="number" min="1" value="1" required></label>
+                        <button class="boton" type="submit">Consultar</button>
+                    </form>
+                    <p id="consulta-mensaje" hidden></p>
+                    <dl id="consulta-resultado" class="datos" style="margin-top: 1rem" hidden></dl>
+                </section>
+            </div>
+
+            <section id="panel-usuarios" class="panel" hidden>
+                <div class="encabezado-panel">
+                    <h2>Usuarios registrados</h2>
+                    <button id="recargar-usuarios" class="boton boton-secundario" type="button">Actualizar</button>
+                </div>
+                <p id="usuarios-mensaje" hidden></p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Id</th><th>Nombre</th><th>Correo</th><th>Celular</th><th>Rol</th></tr></thead>
+                        <tbody id="tabla-usuarios"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="panel-propietario" class="panel" hidden>
+                <h2>Crear propietario (HU1)</h2>
+                <form id="form-propietario" class="formulario">
+                    <label>Nombre<input name="nombre" required></label>
+                    <label>Apellido<input name="apellido" required></label>
+                    <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
+                    <label>Celular (sin +57)<input name="celular" type="tel" inputmode="numeric" pattern="3[0-9]{9}" maxlength="10" placeholder="3023066544" title="Celular colombiano: 10 dígitos que empiezan por 3, sin +57" required></label>
+                    <label>Fecha de nacimiento<input name="fechaNacimiento" type="date" required></label>
+                    <label>Correo<input name="correo" type="email" placeholder="nombre@gmail.com" required></label>
+                    <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
+                    <button class="boton" type="submit">Crear propietario</button>
+                </form>
+                <p id="propietario-mensaje" hidden></p>
+            </section>
+
+            <section id="panel-empleado" class="panel" hidden>
+                <h2>Crear usuario empleado</h2>
+                <p class="texto-suave">Usa <code>POST /usuarios/empleado</code>: crea el usuario con rol EMPLEADO pero
+                    <strong>no lo vincula</strong> a tu restaurante. Para crearlo y vincularlo a la vez (HU6) usa la
+                    <a href="http://localhost:8082">consola de Plazoleta</a>.</p>
+                <form id="form-empleado" class="formulario">
+                    <label>Nombre<input name="nombre" required></label>
+                    <label>Apellido<input name="apellido" required></label>
+                    <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
+                    <label>Celular (sin +57)<input name="celular" type="tel" inputmode="numeric" pattern="3[0-9]{9}" maxlength="10" placeholder="3023066544" title="Celular colombiano: 10 dígitos que empiezan por 3, sin +57" required></label>
+                    <label>Correo<input name="correo" type="email" placeholder="nombre@gmail.com" required></label>
+                    <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
+                    <button class="boton" type="submit">Crear empleado</button>
+                </form>
+                <p id="empleado-mensaje" hidden></p>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        "use strict";
+
+        const CONFIG = Object.freeze({ USUARIOS_URL: "http://localhost:8081" });
+        const TOKEN_KEY = "plazoleta.token";
+        const CLAVE_PRUEBA = "Clave123*";
+        const USUARIOS_PRUEBA = [
+            { nombre: "Mich Everest", rol: "ADMINISTRADOR", correo: "mich@gmail.com" },
+            { nombre: "Cartethyia Plazoleta", rol: "PROPIETARIO", correo: "cartethyia@gmail.com" },
+            { nombre: "Jean Plazoleta", rol: "CLIENTE", correo: "jean@gmail.com" },
+            { nombre: "Mari Plazoleta", rol: "EMPLEADO", correo: "mari@gmail.com" }
+        ];
+        const MILISEGUNDOS_POR_SEGUNDO = 1000;
+        const HTTP_UNAUTHORIZED = 401;
+        const MENSAJE_SIN_CONEXION = "No se pudo conectar con el servidor. Verifica que los microservicios estén encendidos.";
+
+        const $ = (selector) => document.querySelector(selector);
+
+        function h(tag, props = {}, ...children) {
+            const elemento = document.createElement(tag);
+            Object.entries(props).forEach(([clave, valor]) => {
+                if (clave.startsWith("on")) {
+                    elemento.addEventListener(clave.slice(2).toLowerCase(), valor);
+                } else if (clave === "className") {
+                    elemento.className = valor;
+                } else if (valor !== false && valor !== null && valor !== undefined) {
+                    elemento.setAttribute(clave, valor === true ? "" : valor);
+                }
+            });
+            elemento.append(...children.flat()
+                .filter((hijo) => hijo !== null && hijo !== undefined && hijo !== false)
+                .map((hijo) => (hijo instanceof Node ? hijo : document.createTextNode(String(hijo)))));
+            return elemento;
+        }
+
+        function mostrarMensaje(contenedor, texto, tipo = "error") {
+            contenedor.textContent = texto;
+            contenedor.className = `mensaje mensaje-${tipo}`;
+            contenedor.hidden = false;
+        }
+
+        async function ejecutar(contenedor, accion) {
+            contenedor.hidden = true;
+            try {
+                const texto = await accion();
+                if (texto) {
+                    mostrarMensaje(contenedor, texto, "exito");
+                }
+            } catch (error) {
+                mostrarMensaje(contenedor, error.message);
+            }
+        }
+
+        function alEnviar(selectorFormulario, selectorMensaje, accion, limpiar = true) {
+            const formulario = $(selectorFormulario);
+            formulario.addEventListener("submit", async (evento) => {
+                evento.preventDefault();
+                const boton = formulario.querySelector("button[type=submit]");
+                boton.disabled = true;
+                await ejecutar($(selectorMensaje), async () => {
+                    const texto = await accion(datosDe(formulario));
+                    if (limpiar) {
+                        formulario.reset();
+                    }
+                    return texto;
+                });
+                boton.disabled = false;
+            });
+        }
+
+        function datosDe(formulario) {
+            return Object.fromEntries([...formulario.elements]
+                .filter((campo) => campo.name)
+                .map((campo) => [campo.name, campo.type === "password" ? campo.value : campo.value.trim()]));
+        }
+
+        function llenarTabla(tbody, filas) {
+            const columnas = tbody.closest("table").querySelectorAll("th").length;
+            tbody.replaceChildren(...(filas.length ? filas
+                : [h("tr", {}, h("td", { colspan: columnas, className: "vacio" }, "No hay registros para mostrar"))]));
+        }
+
+        const badge = (texto) => h("span", { className: `estado estado-${texto.toLowerCase()}` }, texto.replace("_", " "));
+
+        function leerToken() {
+            const token = sessionStorage.getItem(TOKEN_KEY);
+            if (!token) {
+                return null;
+            }
+            const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+            const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))));
+            if (payload.exp * MILISEGUNDOS_POR_SEGUNDO < Date.now()) {
+                sessionStorage.removeItem(TOKEN_KEY);
+                return null;
+            }
+            return { token, id: payload.id, correo: payload.sub, rol: payload.rol, vence: new Date(payload.exp * MILISEGUNDOS_POR_SEGUNDO) };
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem(TOKEN_KEY);
+            location.reload();
+        }
+
+        async function api(ruta, { method = "GET", body } = {}) {
+            const token = sessionStorage.getItem(TOKEN_KEY);
+            const headers = { "Content-Type": "application/json" };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+            let respuesta;
+            try {
+                respuesta = await fetch(CONFIG.USUARIOS_URL + ruta,
+                    { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+            } catch {
+                throw new Error(MENSAJE_SIN_CONEXION);
+            }
+            const texto = await respuesta.text();
+            const datos = texto ? JSON.parse(texto) : null;
+            if (respuesta.status === HTTP_UNAUTHORIZED && token) {
+                cerrarSesion();
+            }
+            if (!respuesta.ok) {
+                throw new Error(datos?.mensaje ?? `Error ${respuesta.status}`);
+            }
+            return datos;
+        }
+
+        async function iniciarSesion(correo, clave) {
+            const sesion = await api("/auth/login", { method: "POST", body: { correo, clave } });
+            sessionStorage.setItem(TOKEN_KEY, sesion.token);
+            location.reload();
+        }
+
+        function mostrarUsuariosPrueba() {
+            llenarTabla($("#usuarios-prueba"), USUARIOS_PRUEBA.map((usuario) => h("tr", {},
+                h("td", {}, usuario.nombre),
+                h("td", {}, badge(usuario.rol)),
+                h("td", {}, h("code", {}, usuario.correo)),
+                h("td", {}, h("button", { type: "button", className: "boton boton-pequeno",
+                    onClick: () => ejecutar($("#login-mensaje"), () => iniciarSesion(usuario.correo, CLAVE_PRUEBA)) },
+                    "Entrar")))));
+        }
+
+        function iniciar() {
+            $("#logout").addEventListener("click", cerrarSesion);
+            const sesion = leerToken();
+            if (!sesion) {
+                $("#vista-publica").hidden = false;
+                mostrarUsuariosPrueba();
+                alEnviar("#form-login", "#login-mensaje", (datos) => iniciarSesion(datos.correo, datos.clave), false);
+                alEnviar("#form-registro", "#registro-mensaje", async (datos) => {
+                    const usuario = await api("/usuarios/cliente", { method: "POST", body: datos });
+                    return `Cuenta de cliente creada con id ${usuario.id}. Ya puedes iniciar sesión.`;
+                });
+                return;
+            }
+            $("#barra-sesion").hidden = false;
+            $("#sesion").textContent = `${sesion.correo} · ${sesion.rol}`;
+            $("#vista-privada").hidden = false;
+            $("#sesion-id").textContent = sesion.id;
+            $("#sesion-correo").textContent = sesion.correo;
+            $("#sesion-rol").replaceChildren(badge(sesion.rol));
+            $("#sesion-vence").textContent = sesion.vence.toLocaleString("es-CO");
+            $("#sesion-token").value = sesion.token;
+            $("#copiar-token").addEventListener("click", () => ejecutar($("#token-mensaje"), async () => {
+                await navigator.clipboard.writeText(sesion.token);
+                return "Token copiado al portapapeles";
+            }));
+            alEnviar("#form-consulta", "#consulta-mensaje", async (datos) => {
+                const usuario = await api(`/usuarios/${datos.id}`);
+                $("#consulta-resultado").replaceChildren(
+                    h("dt", {}, "Id"), h("dd", {}, usuario.id),
+                    h("dt", {}, "Nombre"), h("dd", {}, usuario.nombre),
+                    h("dt", {}, "Correo"), h("dd", {}, usuario.correo),
+                    h("dt", {}, "Celular"), h("dd", {}, usuario.celular),
+                    h("dt", {}, "Rol"), h("dd", {}, badge(usuario.rol)));
+                $("#consulta-resultado").hidden = false;
+            }, false);
+
+            if (sesion.rol === "ADMINISTRADOR") {
+                $("#panel-usuarios").hidden = false;
+                $("#panel-propietario").hidden = false;
+                $("#recargar-usuarios").addEventListener("click", cargarUsuarios);
+                alEnviar("#form-propietario", "#propietario-mensaje", async (datos) => {
+                    const usuario = await api("/usuarios/propietario", { method: "POST", body: datos });
+                    await cargarUsuarios();
+                    return `Propietario creado con id ${usuario.id}`;
+                });
+                cargarUsuarios();
+            }
+            if (sesion.rol === "PROPIETARIO") {
+                $("#panel-empleado").hidden = false;
+                alEnviar("#form-empleado", "#empleado-mensaje", async (datos) => {
+                    const usuario = await api("/usuarios/empleado", { method: "POST", body: datos });
+                    return `Usuario empleado creado con id ${usuario.id} (sin vincular a un restaurante)`;
+                });
+            }
+        }
+
+        function cargarUsuarios() {
+            return ejecutar($("#usuarios-mensaje"), async () => {
+                const usuarios = await api("/usuarios");
+                llenarTabla($("#tabla-usuarios"), usuarios.map((usuario) => h("tr", {},
+                    h("td", {}, usuario.id),
+                    h("td", {}, usuario.nombre),
+                    h("td", {}, usuario.correo),
+                    h("td", {}, usuario.celular),
+                    h("td", {}, badge(usuario.rol)))));
+            });
+        }
+
+        iniciar();
+    </script>
+</body>
+</html>

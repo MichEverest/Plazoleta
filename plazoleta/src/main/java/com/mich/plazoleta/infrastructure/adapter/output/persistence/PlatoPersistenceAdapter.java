@@ -36,11 +36,15 @@ public class PlatoPersistenceAdapter implements PlatoRepositoryPort {
                                                @Param("idCategoria") Long idCategoria,
                                                @Param("soloActivos") boolean soloActivos,
                                                Pageable pageable);
+
+        boolean existsByRestauranteId(Long idRestaurante);
     }
 
     public interface CategoriaJpaRepository extends JpaRepository<CategoriaEntity, Long> {
 
         boolean existsByNombre(String nombre);
+
+        Optional<CategoriaEntity> findByNombre(String nombre);
     }
 
     private final PlatoJpaRepository platoJpaRepository;

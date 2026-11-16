@@ -34,7 +34,7 @@ public class SecurityConfiguration {
     private static final String PROPIETARIO = Rol.PROPIETARIO.name();
     private static final String EMPLEADO = Rol.EMPLEADO.name();
     private static final String CLIENTE = Rol.CLIENTE.name();
-    private static final String[] RUTAS_FRONT = {"/", "/index.html", "/styles.css"};
+    private static final String[] RUTAS_FRONT = {"/", "/index.html", "/styles.css", "/img/**"};
     private static final String[] RUTAS_SWAGGER = {"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"};
     private static final String RUTA_H2_CONSOLE = "/h2-console/**";
     private static final List<String> METODOS_PERMITIDOS = List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
@@ -88,7 +88,7 @@ public class SecurityConfiguration {
                     auth.requestMatchers(HttpMethod.PATCH, "/pedidos/*/cancelar").hasRole(CLIENTE);
                     auth.requestMatchers(HttpMethod.GET, "/pedidos").hasRole(EMPLEADO);
                     auth.requestMatchers(HttpMethod.PATCH, "/pedidos/*/asignar", "/pedidos/*/listo",
-                            "/pedidos/*/entregar").hasRole(EMPLEADO);
+                            "/pedidos/*/entregar", "/pedidos/*/reenviar-pin").hasRole(EMPLEADO);
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtService.filtro(), UsernamePasswordAuthenticationFilter.class);

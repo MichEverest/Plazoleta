@@ -22,8 +22,15 @@ public class Trazabilidad {
         }
     }
 
+    /**
+     * conSms: en el paso a LISTO, true si el PIN se envió por SMS y false si se usó el atajo sin SMS; null en los demás.
+     */
     public record Historial(Estado estadoAnterior, Estado estadoNuevo, LocalDateTime fecha, String correoEmpleado,
-                            Long duracionSegundos) {
+                            Long duracionSegundos, Boolean conSms) {
+    }
+
+    public record Resumen(Long idPedido, Long idRestaurante, Estado estadoActual, LocalDateTime fechaCreacion,
+                          LocalDateTime fechaUltimoCambio) {
     }
 
     private Long id;
@@ -36,6 +43,7 @@ public class Trazabilidad {
     private Estado estadoNuevo;
     private Long idEmpleado;
     private String correoEmpleado;
+    private Boolean conSms;
 
     public Trazabilidad() {
     }
@@ -84,4 +92,7 @@ public class Trazabilidad {
 
     public String getCorreoEmpleado() { return correoEmpleado; }
     public void setCorreoEmpleado(String correoEmpleado) { this.correoEmpleado = correoEmpleado; }
+
+    public Boolean getConSms() { return conSms; }
+    public void setConSms(Boolean conSms) { this.conSms = conSms; }
 }

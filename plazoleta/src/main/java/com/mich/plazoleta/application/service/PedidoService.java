@@ -13,7 +13,13 @@ public interface PedidoService {
 
     Pedido asignar(Long idPedido, Long idEmpleado, String correoEmpleado);
 
-    Pedido marcarListo(Long idPedido, Long idEmpleado, String correoEmpleado);
+    /**
+     * Marca el pedido listo. Con sinSms=false genera el PIN y lo envía por SMS; con sinSms=true es el atajo sin SMS:
+     * no hay PIN y la entrega no lo pide. Queda registrado en el pedido y en la trazabilidad.
+     */
+    Pedido marcarListo(Long idPedido, Long idEmpleado, String correoEmpleado, boolean sinSms);
+
+    Pedido reenviarPin(Long idPedido, Long idEmpleado);
 
     Pedido entregar(Long idPedido, String pin, Long idEmpleado, String correoEmpleado);
 

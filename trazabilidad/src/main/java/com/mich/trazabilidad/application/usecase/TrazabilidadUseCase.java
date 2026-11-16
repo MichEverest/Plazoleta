@@ -60,9 +60,24 @@ public class TrazabilidadUseCase implements TrazabilidadService {
             LocalDateTime fin = i + 1 < registros.size() ? registros.get(i + 1).getFecha() : finDelEstadoActual(actual);
             historial.add(new Trazabilidad.Historial(actual.getEstadoAnterior(), actual.getEstadoNuevo(),
                     actual.getFecha(), actual.getCorreoEmpleado(),
-                    fin == null ? null : Duration.between(actual.getFecha(), fin).getSeconds()));
+                    fin == null ? null : Duration.between(actual.getFecha(), fin).getSeconds(), actual.getConSms()));
         }
         return historial;
+    }
+
+    @Override
+    public List<Trazabilidad.Resumen> listarPedidosDeCliente(Long idCliente) {
+        return trazabilidadRepositoryPort.listarPorCliente(idCliente).stream()
+                .collect(Collectors.groupingBy(Trazabilidad::getIdPedido, LinkedHashMap::new, Collectors.toList()))
+                .values().stream()
+                .map(registros -> {
+                    Trazabilidad primero = registros.get(0);
+                    Trazabilidad ultimo = registros.get(registros.size() - 1);
+                    return new Trazabilidad.Resumen(primero.getIdPedido(), primero.getIdRestaurante(),
+                            ultimo.getEstadoNuevo(), primero.getFecha(), ultimo.getFecha());
+                })
+                .sorted(Comparator.comparing(Trazabilidad.Resumen::fechaCreacion).reversed())
+                .toList();
     }
 
     @Override

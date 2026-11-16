@@ -12,6 +12,8 @@ public interface TrazabilidadService {
 
     List<Trazabilidad.Historial> consultarHistorial(Long idPedido, Long idCliente);
 
+    List<Trazabilidad.Resumen> listarPedidosDeCliente(Long idCliente);
+
     Eficiencia.Reporte calcularEficienciaPedidos(Pagina.Solicitud solicitud);
 
     Pagina<Eficiencia.Empleado> calcularRankingEmpleados(Pagina.Solicitud solicitud);

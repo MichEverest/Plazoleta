@@ -34,3 +34,6 @@ build/
 
 ### Datos locales H2 ###
 data/
+
+### Credenciales de SMS reales (Twilio) ###
+sms.properties

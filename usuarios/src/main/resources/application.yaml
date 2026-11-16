@@ -8,6 +8,9 @@ spring:
     default: local
   autoconfigure:
     exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+  web:
+    resources:
+      static-locations: classpath:/front/
   jpa:
     open-in-view: false
 
@@ -15,7 +18,10 @@ jwt:
   expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
 
 cors:
-  allowed-origins: http://localhost:8082,http://127.0.0.1:8082,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8383,http://127.0.0.1:8383
+  allowed-origins: >-
+    http://localhost:8081,http://127.0.0.1:8081,http://localhost:8082,http://127.0.0.1:8082,
+    http://localhost:8083,http://127.0.0.1:8083,http://localhost:8084,http://127.0.0.1:8084,
+    http://localhost:5500,http://127.0.0.1:5500,http://localhost:8383,http://127.0.0.1:8383
 
 seed:
   enabled: true
@@ -32,7 +38,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:file:./data/usuarios
+    url: jdbc:h2:file:./data/usuarios;AUTO_SERVER=TRUE
     username: sa
     password:
   jpa:
@@ -45,6 +51,10 @@ spring:
 jwt:
   secret: ${JWT_SECRET:plazoleta-local-jwt-secret-cambiar-en-produccion-2026}
 
+seed:
+  # Celular que se asigna a todos los CLIENTES en cada arranque, para que los PIN de prueba lleguen a un solo teléfono.
+  # El personal usa el de la empresa (3022249736). Déjalo vacío (CELULAR_CLIENTES=) para que cada cliente conserve el suyo.
+  celular-para-clientes: ${CELULAR_CLIENTES:3023066544}
 ---
 spring:
   config:

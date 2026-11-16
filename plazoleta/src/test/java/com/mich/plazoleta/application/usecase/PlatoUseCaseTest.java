@@ -210,6 +210,6 @@ class PlatoUseCaseTest {
     }
 
     private Restaurante restaurante() {
-        return new Restaurante(1L, "Sabores", "900123456", "Calle 10", "+573001234567", "logo", ID_PROPIETARIO);
+        return new Restaurante(1L, "Sabores", "900123456", "Calle 10", "6044441234", "logo", ID_PROPIETARIO);
     }
 }

@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +36,14 @@ class UsuarioUseCaseTest {
 
     @InjectMocks
     private UsuarioUseCase usuarioUseCase;
+
+    @Test
+    void listarDevuelveLosUsuariosDelRepositorio() {
+        List<Usuario> usuarios = List.of(usuarioValido());
+        when(usuarioRepositoryPort.listar()).thenReturn(usuarios);
+
+        assertEquals(usuarios, usuarioUseCase.listar());
+    }
 
     @Test
     void crearPropietarioAsignaRolPropietarioYEncriptaClave() {
@@ -110,9 +119,25 @@ class UsuarioUseCaseTest {
     }
 
     @Test
-    void crearPropietarioFallaSiCelularSuperaTreceCaracteres() {
+    void crearPropietarioFallaSiCelularIncluyeIndicativo() {
         Usuario usuario = usuarioValido();
-        usuario.setCelular("+5730056983251");
+        usuario.setCelular("+573005698325");
+
+        assertThrows(ValidacionException.class, () -> usuarioUseCase.crearPropietario(usuario));
+    }
+
+    @Test
+    void crearPropietarioFallaSiCelularNoTieneDiezDigitos() {
+        Usuario usuario = usuarioValido();
+        usuario.setCelular("30056983");
+
+        assertThrows(ValidacionException.class, () -> usuarioUseCase.crearPropietario(usuario));
+    }
+
+    @Test
+    void crearPropietarioFallaSiCelularNoEmpiezaPorTres() {
+        Usuario usuario = usuarioValido();
+        usuario.setCelular("6045698325");
 
         assertThrows(ValidacionException.class, () -> usuarioUseCase.crearPropietario(usuario));
     }
@@ -225,7 +250,7 @@ class UsuarioUseCaseTest {
     }
 
     private Usuario usuarioValido() {
-        return new Usuario(1L, "Ana", "Gomez", "1234567890", "+573005698325", LocalDate.of(1990, 5, 20),
+        return new Usuario(1L, "Ana", "Gomez", "1234567890", "3005698325", LocalDate.of(1990, 5, 20),
                 "ana@correo.com", "Clave123*", null);
     }
 }

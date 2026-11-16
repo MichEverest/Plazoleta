@@ -11,4 +11,6 @@ public interface TrazabilidadRepositoryPort {
     List<Trazabilidad> listarPorPedido(Long idPedido);
 
     List<Trazabilidad> listarPorRestaurante(Long idRestaurante);
+
+    List<Trazabilidad> listarPorCliente(Long idCliente);
 }

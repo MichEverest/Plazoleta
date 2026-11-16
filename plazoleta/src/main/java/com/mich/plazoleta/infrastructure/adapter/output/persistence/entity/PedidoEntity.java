@@ -47,6 +47,12 @@ public class PedidoEntity {
     @Column(length = 6)
     private String pin;
 
+    @Column(name = "pin_externo")
+    private Boolean pinExterno;
+
+    @Column(name = "sin_sms")
+    private Boolean sinSms;
+
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PedidoPlatoEntity> platos = new ArrayList<>();
 
@@ -74,4 +80,10 @@ public class PedidoEntity {
 
     public String getPin() { return pin; }
     public void setPin(String pin) { this.pin = pin; }
+
+    public boolean isPinExterno() { return Boolean.TRUE.equals(pinExterno); }
+    public void setPinExterno(boolean pinExterno) { this.pinExterno = pinExterno; }
+
+    public boolean isSinSms() { return Boolean.TRUE.equals(sinSms); }
+    public void setSinSms(boolean sinSms) { this.sinSms = sinSms; }
 }

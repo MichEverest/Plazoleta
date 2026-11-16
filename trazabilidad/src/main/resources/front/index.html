@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consola de Trazabilidad</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="barra">
+        <span class="marca">Trazabilidad · 8083</span>
+        <nav class="servicios" aria-label="Consolas de los microservicios">
+            <a href="http://localhost:8082">Plazoleta</a>
+            <a href="http://localhost:8081">Usuarios</a>
+            <a href="http://localhost:8083" aria-current="page">Trazabilidad</a>
+            <a href="http://localhost:8084">Mensajería</a>
+            <a href="/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+        </nav>
+        <div id="barra-sesion" class="barra-sesion" hidden>
+            <span id="sesion"></span>
+            <button id="logout" class="boton boton-secundario" type="button">Salir</button>
+        </div>
+    </header>
+
+    <main class="contenedor">
+        <section class="panel intro">
+            <h1>Microservicio de Trazabilidad</h1>
+            <p class="texto-suave">Guarda cada cambio de estado de los pedidos. El <strong>cliente</strong> consulta el
+                historial de sus pedidos (HU17) y el <strong>propietario</strong> la eficiencia de su restaurante (HU18).</p>
+        </section>
+
+        <div id="vista-publica" class="columnas" hidden>
+            <section class="panel">
+                <h2>Iniciar sesión</h2>
+                <form id="form-login" class="formulario formulario-columna">
+                    <label>Correo<input name="correo" type="email" autocomplete="username" required></label>
+                    <label>Clave<input name="clave" type="password" autocomplete="current-password" required></label>
+                    <button class="boton" type="submit">Ingresar</button>
+                </form>
+                <p id="login-mensaje" hidden></p>
+            </section>
+
+            <section class="panel">
+                <h2>Usuarios de prueba</h2>
+                <p class="texto-suave">Esta consola sirve para los roles CLIENTE y PROPIETARIO. Clave <code>Clave123*</code>.</p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Usuario</th><th>Rol</th><th>Correo</th><th></th></tr></thead>
+                        <tbody id="usuarios-prueba"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <section id="vista-sin-acceso" class="panel" hidden>
+            <h2>Sin vistas para este rol</h2>
+            <p class="texto-suave">Trazabilidad solo expone consultas para CLIENTE y PROPIETARIO. Sal e ingresa con
+                <code>jean@gmail.com</code> o <code>cartethyia@gmail.com</code>.</p>
+        </section>
+
+        <div id="vista-CLIENTE" class="pila" hidden>
+            <section class="panel">
+                <div class="encabezado-panel">
+                    <h2>Mis pedidos</h2>
+                    <button id="cliente-recargar" class="boton boton-secundario" type="button">Actualizar</button>
+                </div>
+                <p id="cliente-mensaje" hidden></p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Pedido</th><th>Creado</th><th>Último cambio</th><th>Estado actual</th><th></th></tr></thead>
+                        <tbody id="cliente-pedidos"></tbody>
+                    </table>
+                </div>
+                <form id="form-buscar" class="formulario" style="margin-top: 1.5rem">
+                    <label>Consultar otro pedido por id<input name="idPedido" type="number" min="1" required></label>
+                    <button class="boton boton-secundario" type="submit">Ver historial</button>
+                </form>
+            </section>
+
+            <section id="cliente-historial" class="panel" hidden>
+                <h2 id="cliente-titulo-historial"></h2>
+                <ol id="cliente-linea" class="linea-tiempo"></ol>
+            </section>
+        </div>
+
+        <div id="vista-PROPIETARIO" class="pila" hidden>
+            <section class="panel">
+                <div class="encabezado-panel">
+                    <h2>Eficiencia de pedidos entregados</h2>
+                    <button id="prop-recargar" class="boton boton-secundario" type="button">Actualizar</button>
+                </div>
+                <p class="texto-suave">Tiempo promedio desde que el cliente hace el pedido hasta que se entrega</p>
+                <p class="metrica" id="prop-promedio">-</p>
+                <p id="prop-mensaje" hidden></p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Pedido</th><th>Creado</th><th>Entregado</th><th>Duración</th><th>Comparación</th></tr></thead>
+                        <tbody id="prop-pedidos"></tbody>
+                    </table>
+                </div>
+                <nav id="prop-paginacion-pedidos" class="paginacion"></nav>
+            </section>
+
+            <section class="panel">
+                <h2>Ranking de empleados</h2>
+                <p class="texto-suave">Tiempo medio entre "en preparación" y "listo" en pedidos entregados. Menor es mejor.</p>
+                <p id="ranking-mensaje" hidden></p>
+                <div class="tabla-contenedor">
+                    <table class="tabla">
+                        <thead><tr><th>Posición</th><th>Empleado</th><th>Tiempo medio</th><th>Pedidos atendidos</th></tr></thead>
+                        <tbody id="prop-ranking"></tbody>
+                    </table>
+                </div>
+                <nav id="prop-paginacion-ranking" class="paginacion"></nav>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        "use strict";
+
+        const CONFIG = Object.freeze({
+            USUARIOS_URL: "http://localhost:8081",
+            TRAZABILIDAD_URL: "http://localhost:8083"
+        });
+        const TOKEN_KEY = "plazoleta.token";
+        const CLAVE_PRUEBA = "Clave123*";
+        const USUARIOS_PRUEBA = [
+            { nombre: "Jean Plazoleta", rol: "CLIENTE", correo: "jean@gmail.com" },
+            { nombre: "Cartethyia Plazoleta", rol: "PROPIETARIO", correo: "cartethyia@gmail.com" }
+        ];
+        const ROLES_CON_VISTA = ["CLIENTE", "PROPIETARIO"];
+        const TAMANO_TABLA = 5;
+        const MILISEGUNDOS_POR_SEGUNDO = 1000;
+        const SEGUNDOS_POR_MINUTO = 60;
+        const HTTP_UNAUTHORIZED = 401;
+        const MENSAJE_SIN_CONEXION = "No se pudo conectar con el servidor. Verifica que los microservicios estén encendidos.";
+
+        const $ = (selector) => document.querySelector(selector);
+
+        function h(tag, props = {}, ...children) {
+            const elemento = document.createElement(tag);
+            Object.entries(props).forEach(([clave, valor]) => {
+                if (clave.startsWith("on")) {
+                    elemento.addEventListener(clave.slice(2).toLowerCase(), valor);
+                } else if (clave === "className") {
+                    elemento.className = valor;
+                } else if (valor !== false && valor !== null && valor !== undefined) {
+                    elemento.setAttribute(clave, valor === true ? "" : valor);
+                }
+            });
+            elemento.append(...children.flat()
+                .filter((hijo) => hijo !== null && hijo !== undefined && hijo !== false)
+                .map((hijo) => (hijo instanceof Node ? hijo : document.createTextNode(String(hijo)))));
+            return elemento;
+        }
+
+        function mostrarMensaje(contenedor, texto, tipo = "error") {
+            contenedor.textContent = texto;
+            contenedor.className = `mensaje mensaje-${tipo}`;
+            contenedor.hidden = false;
+        }
+
+        async function ejecutar(contenedor, accion) {
+            contenedor.hidden = true;
+            try {
+                const texto = await accion();
+                if (texto) {
+                    mostrarMensaje(contenedor, texto, "exito");
+                }
+            } catch (error) {
+                mostrarMensaje(contenedor, error.message);
+            }
+        }
+
+        function llenarTabla(tbody, filas) {
+            const columnas = tbody.closest("table").querySelectorAll("th").length;
+            tbody.replaceChildren(...(filas.length ? filas
+                : [h("tr", {}, h("td", { colspan: columnas, className: "vacio" }, "No hay registros para mostrar"))]));
+        }
+
+        function paginar(contenedor, pagina, alCambiar) {
+            contenedor.replaceChildren(
+                h("button", { type: "button", className: "boton boton-secundario", disabled: pagina.page === 0,
+                    onClick: () => alCambiar(pagina.page - 1) }, "Anterior"),
+                h("span", {}, `Página ${pagina.totalPages === 0 ? 0 : pagina.page + 1} de ${pagina.totalPages}`),
+                h("button", { type: "button", className: "boton boton-secundario",
+                    disabled: pagina.page + 1 >= pagina.totalPages, onClick: () => alCambiar(pagina.page + 1) }, "Siguiente"));
+        }
+
+        const badge = (texto) => h("span", { className: `estado estado-${texto.toLowerCase()}` }, texto.replace("_", " "));
+        const formatoFecha = (iso) => new Date(iso).toLocaleString("es-CO");
+
+        function formatoDuracion(segundos) {
+            const total = Math.round(segundos);
+            const minutos = Math.floor(total / SEGUNDOS_POR_MINUTO);
+            return minutos > 0 ? `${minutos} min ${total % SEGUNDOS_POR_MINUTO} s` : `${total} s`;
+        }
+
+        function leerToken() {
+            const token = sessionStorage.getItem(TOKEN_KEY);
+            if (!token) {
+                return null;
+            }
+            const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+            const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))));
+            if (payload.exp * MILISEGUNDOS_POR_SEGUNDO < Date.now()) {
+                sessionStorage.removeItem(TOKEN_KEY);
+                return null;
+            }
+            return { id: payload.id, correo: payload.sub, rol: payload.rol };
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem(TOKEN_KEY);
+            location.reload();
+        }
+
+        async function api(baseUrl, ruta, { method = "GET", body } = {}) {
+            const token = sessionStorage.getItem(TOKEN_KEY);
+            const headers = { "Content-Type": "application/json" };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+            let respuesta;
+            try {
+                respuesta = await fetch(baseUrl + ruta, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+            } catch {
+                throw new Error(MENSAJE_SIN_CONEXION);
+            }
+            const texto = await respuesta.text();
+            const datos = texto ? JSON.parse(texto) : null;
+            if (respuesta.status === HTTP_UNAUTHORIZED && token) {
+                cerrarSesion();
+            }
+            if (!respuesta.ok) {
+                throw new Error(datos?.mensaje ?? `Error ${respuesta.status}`);
+            }
+            return datos;
+        }
+
+        const trazabilidadApi = (ruta) => api(CONFIG.TRAZABILIDAD_URL, ruta);
+
+        async function iniciarSesion(correo, clave) {
+            const sesion = await api(CONFIG.USUARIOS_URL, "/auth/login", { method: "POST", body: { correo, clave } });
+            sessionStorage.setItem(TOKEN_KEY, sesion.token);
+            location.reload();
+        }
+
+        function mostrarVistaPublica() {
+            $("#vista-publica").hidden = false;
+            llenarTabla($("#usuarios-prueba"), USUARIOS_PRUEBA.map((usuario) => h("tr", {},
+                h("td", {}, usuario.nombre),
+                h("td", {}, badge(usuario.rol)),
+                h("td", {}, h("code", {}, usuario.correo)),
+                h("td", {}, h("button", { type: "button", className: "boton boton-pequeno",
+                    onClick: () => ejecutar($("#login-mensaje"), () => iniciarSesion(usuario.correo, CLAVE_PRUEBA)) },
+                    "Entrar")))));
+            $("#form-login").addEventListener("submit", (evento) => {
+                evento.preventDefault();
+                const datos = new FormData(evento.target);
+                ejecutar($("#login-mensaje"), () => iniciarSesion(datos.get("correo").trim(), datos.get("clave")));
+            });
+        }
+
+        function iniciar() {
+            $("#logout").addEventListener("click", cerrarSesion);
+            const sesion = leerToken();
+            if (!sesion) {
+                mostrarVistaPublica();
+                return;
+            }
+            $("#barra-sesion").hidden = false;
+            $("#sesion").textContent = `${sesion.correo} · ${sesion.rol}`;
+            if (!ROLES_CON_VISTA.includes(sesion.rol)) {
+                $("#vista-sin-acceso").hidden = false;
+                return;
+            }
+            $(`#vista-${sesion.rol}`).hidden = false;
+            if (sesion.rol === "CLIENTE") {
+                $("#cliente-recargar").addEventListener("click", cargarMisPedidos);
+                $("#form-buscar").addEventListener("submit", (evento) => {
+                    evento.preventDefault();
+                    verHistorial(Number(new FormData(evento.target).get("idPedido")));
+                });
+                cargarMisPedidos();
+            } else {
+                $("#prop-recargar").addEventListener("click", () => {
+                    cargarEficiencia(0);
+                    cargarRanking(0);
+                });
+                cargarEficiencia(0);
+                cargarRanking(0);
+            }
+        }
+
+        function cargarMisPedidos() {
+            return ejecutar($("#cliente-mensaje"), async () => {
+                const pedidos = await trazabilidadApi("/trazabilidad/pedidos");
+                llenarTabla($("#cliente-pedidos"), pedidos.map((pedido) => h("tr", { "data-pedido": pedido.idPedido },
+                    h("td", {}, `#${pedido.idPedido}`),
+                    h("td", {}, formatoFecha(pedido.fechaCreacion)),
+                    h("td", {}, formatoFecha(pedido.fechaUltimoCambio)),
+                    h("td", {}, badge(pedido.estadoActual)),
+                    h("td", {}, h("button", { type: "button", className: "boton boton-pequeno",
+                        onClick: () => verHistorial(pedido.idPedido) }, "Ver historial")))));
+            });
+        }
+
+        function verHistorial(idPedido) {
+            return ejecutar($("#cliente-mensaje"), async () => {
+                const historial = await trazabilidadApi(`/trazabilidad/pedidos/${idPedido}`);
+                document.querySelectorAll("#cliente-pedidos tr").forEach((fila) =>
+                    fila.classList.toggle("seleccionada", fila.dataset.pedido === String(idPedido)));
+                $("#cliente-titulo-historial").textContent = `Historial del pedido #${idPedido}`;
+                $("#cliente-linea").replaceChildren(...historial.map((cambio) => h("li", {},
+                    badge(cambio.estadoNuevo),
+                    h("span", {}, formatoFecha(cambio.fecha)),
+                    h("span", { className: "texto-suave" }, cambio.duracionSegundos === null ? "Estado final"
+                        : `Tiempo en este estado: ${formatoDuracion(cambio.duracionSegundos)}`),
+                    cambio.conSms === true ? h("span", { className: "estado estado-listo" }, "PIN enviado por SMS")
+                        : cambio.conSms === false ? h("span", { className: "estado estado-pendiente" }, "Sin SMS (entrega sin PIN)") : null,
+                    cambio.correoEmpleado ? h("span", { className: "texto-suave" }, `Empleado: ${cambio.correoEmpleado}`) : null)));
+                $("#cliente-historial").hidden = false;
+                $("#cliente-historial").scrollIntoView({ behavior: "smooth" });
+            });
+        }
+
+        function cargarEficiencia(pagina) {
+            return ejecutar($("#prop-mensaje"), async () => {
+                const datos = await trazabilidadApi(`/trazabilidad/eficiencia/pedidos?page=${pagina}&size=${TAMANO_TABLA}`);
+                $("#prop-promedio").textContent = datos.pedidos.totalElements ? formatoDuracion(datos.promedioSegundos) : "-";
+                llenarTabla($("#prop-pedidos"), datos.pedidos.content.map((pedido) =>
+                    h("tr", { className: pedido.superaPromedio ? "fila-alerta" : null },
+                        h("td", {}, `#${pedido.idPedido}`),
+                        h("td", {}, formatoFecha(pedido.fechaInicio)),
+                        h("td", {}, formatoFecha(pedido.fechaEntrega)),
+                        h("td", {}, formatoDuracion(pedido.duracionSegundos)),
+                        h("td", {}, pedido.superaPromedio ? "Supera el promedio" : "Dentro del promedio"))));
+                paginar($("#prop-paginacion-pedidos"), datos.pedidos, cargarEficiencia);
+            });
+        }
+
+        function cargarRanking(pagina) {
+            return ejecutar($("#ranking-mensaje"), async () => {
+                const datos = await trazabilidadApi(`/trazabilidad/eficiencia/empleados?page=${pagina}&size=${TAMANO_TABLA}`);
+                llenarTabla($("#prop-ranking"), datos.content.map((fila) => h("tr", {},
+                    h("td", {}, fila.posicion),
+                    h("td", {}, fila.correoEmpleado ?? `Empleado ${fila.idEmpleado}`),
+                    h("td", {}, formatoDuracion(fila.promedioSegundos)),
+                    h("td", {}, fila.pedidosAtendidos))));
+                paginar($("#prop-paginacion-ranking"), datos, cargarRanking);
+            });
+        }
+
+        iniciar();
+    </script>
+</body>
+</html>

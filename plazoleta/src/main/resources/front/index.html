@@ -8,9 +8,16 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header id="barra" class="barra" hidden>
-        <span class="marca">Plazoleta</span>
-        <div class="barra-sesion">
+    <header id="barra" class="barra">
+        <span class="marca">Plazoleta · 8082</span>
+        <nav class="servicios" aria-label="Consolas de los microservicios">
+            <a href="http://localhost:8082" aria-current="page">Plazoleta</a>
+            <a href="http://localhost:8081">Usuarios</a>
+            <a href="http://localhost:8083">Trazabilidad</a>
+            <a href="http://localhost:8084">Mensajería</a>
+            <a href="/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+        </nav>
+        <div id="barra-sesion" class="barra-sesion" hidden>
             <span id="sesion"></span>
             <button id="logout" class="boton boton-secundario" type="button">Salir</button>
         </div>
@@ -27,6 +34,9 @@
             </form>
             <p id="login-mensaje" hidden></p>
             <p class="texto-suave">¿No tienes cuenta? <button id="ir-registro" class="enlace" type="button">Regístrate como cliente</button></p>
+            <h2 class="subtitulo">Usuarios de prueba</h2>
+            <p class="texto-suave">Clave <code>Clave123*</code> para todos. Pulsa uno para entrar.</p>
+            <ul id="usuarios-prueba" class="usuarios-prueba"></ul>
         </section>
     </main>
 
@@ -37,8 +47,8 @@
                 <label>Nombre<input name="nombre" required></label>
                 <label>Apellido<input name="apellido" required></label>
                 <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
-                <label>Celular<input name="celular" type="tel" placeholder="+573005698325" required></label>
-                <label>Correo<input name="correo" type="email" autocomplete="email" required></label>
+                <label>Celular (sin +57)<input name="celular" type="tel" inputmode="numeric" pattern="3[0-9]{9}" maxlength="10" placeholder="3023066544" title="Celular colombiano: 10 dígitos que empiezan por 3, sin +57" required></label>
+                <label>Correo<input name="correo" type="email" autocomplete="email" placeholder="nombre@gmail.com" required></label>
                 <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
                 <button class="boton" type="submit">Registrarme</button>
             </form>
@@ -54,9 +64,9 @@
                 <label>Nombre<input name="nombre" required></label>
                 <label>Apellido<input name="apellido" required></label>
                 <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
-                <label>Celular<input name="celular" type="tel" placeholder="+573005698325" required></label>
+                <label>Celular (sin +57)<input name="celular" type="tel" inputmode="numeric" pattern="3[0-9]{9}" maxlength="10" placeholder="3023066544" title="Celular colombiano: 10 dígitos que empiezan por 3, sin +57" required></label>
                 <label>Fecha de nacimiento<input name="fechaNacimiento" type="date" required></label>
-                <label>Correo<input name="correo" type="email" required></label>
+                <label>Correo<input name="correo" type="email" placeholder="nombre@gmail.com" required></label>
                 <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
                 <button class="boton" type="submit">Crear propietario</button>
             </form>
@@ -69,9 +79,9 @@
                 <label>Nombre<input name="nombre" required></label>
                 <label>NIT<input name="nit" inputmode="numeric" required></label>
                 <label>Dirección<input name="direccion" required></label>
-                <label>Teléfono<input name="telefono" type="tel" placeholder="+573005698325" required></label>
+                <label>Teléfono (sin +57)<input name="telefono" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="6044441234" title="10 dígitos, sin +57" required></label>
                 <label>URL del logo<input name="urlLogo" type="url" required></label>
-                <label>Id del propietario<input name="idPropietario" type="number" min="1" required></label>
+                <label>Id del propietario<input name="idPropietario" type="number" min="1" placeholder="2 = Cartethyia" required></label>
                 <button class="boton" type="submit">Crear restaurante</button>
             </form>
             <p id="admin-mensaje-restaurante" hidden></p>
@@ -130,8 +140,8 @@
                     <label>Nombre<input name="nombre" required></label>
                     <label>Apellido<input name="apellido" required></label>
                     <label>Número de documento<input name="numeroDocumento" inputmode="numeric" required></label>
-                    <label>Celular<input name="celular" type="tel" placeholder="+573005698325" required></label>
-                    <label>Correo<input name="correo" type="email" required></label>
+                    <label>Celular (sin +57)<input name="celular" type="tel" inputmode="numeric" pattern="3[0-9]{9}" maxlength="10" placeholder="3023066544" title="Celular colombiano: 10 dígitos que empiezan por 3, sin +57" required></label>
+                    <label>Correo<input name="correo" type="email" placeholder="nombre@gmail.com" required></label>
                     <label>Clave<input name="clave" type="password" autocomplete="new-password" required></label>
                     <button class="boton" type="submit">Crear empleado</button>
                 </form>
@@ -184,10 +194,16 @@
                     <button id="empleado-recargar" class="boton boton-secundario" type="button">Actualizar</button>
                 </div>
             </div>
+            <p class="ayuda">¿Cómo funciona el PIN? <strong>Asignarme</strong> → <strong>Marcar listo</strong>: el sistema
+                genera un PIN de 6 dígitos y se lo envía por SMS al celular del cliente. El cliente llega, te dice su PIN,
+                lo escribes y pulsas <strong>Entregar</strong>. Si no coincide, no se entrega. Si al cliente no le llegó, pulsa
+                <strong>Reenviar PIN</strong>. Atajo para avanzar rápido: <strong>Listo sin SMS</strong> (no envía nada, se
+                entrega sin PIN y queda registrado como "Sin SMS").</p>
+            <p id="empleado-modo-sms" hidden></p>
             <p id="empleado-mensaje" hidden></p>
             <div class="tabla-contenedor">
                 <table class="tabla">
-                    <thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Platos</th><th>Empleado</th><th>Acciones</th></tr></thead>
+                    <thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Aviso</th><th>Platos</th><th>Empleado</th><th>Acciones</th></tr></thead>
                     <tbody id="empleado-pedidos"></tbody>
                 </table>
             </div>
@@ -230,10 +246,12 @@
                 <h2>Mis pedidos</h2>
                 <button id="cliente-recargar" class="boton boton-secundario" type="button">Actualizar</button>
             </div>
+            <p class="ayuda">Cuando tu pedido esté <strong>LISTO</strong> te llega un SMS con un PIN de 6 dígitos. Díselo
+                al empleado para que te entregue el pedido.</p>
             <p id="cliente-mensaje-pedidos" hidden></p>
             <div class="tabla-contenedor">
                 <table class="tabla">
-                    <thead><tr><th>Pedido</th><th>Fecha</th><th>Estado</th><th>Platos</th><th>Acciones</th></tr></thead>
+                    <thead><tr><th>Pedido</th><th>Fecha</th><th>Estado</th><th>Aviso</th><th>Platos</th><th>Acciones</th></tr></thead>
                     <tbody id="cliente-pedidos"></tbody>
                 </table>
             </div>
@@ -251,8 +269,10 @@
         const CONFIG = Object.freeze({
             USUARIOS_URL: "http://localhost:8081",
             PLAZOLETA_URL: "http://localhost:8082",
-            TRAZABILIDAD_URL: "http://localhost:8083"
+            TRAZABILIDAD_URL: "http://localhost:8083",
+            MENSAJERIA_URL: "http://localhost:8084"
         });
+        const ESTADO_SMS_REAL = "REAL";
         const ROLES = Object.freeze({
             ADMINISTRADOR: "ADMINISTRADOR",
             PROPIETARIO: "PROPIETARIO",
@@ -260,6 +280,13 @@
             CLIENTE: "CLIENTE"
         });
         const TOKEN_KEY = "plazoleta.token";
+        const CLAVE_PRUEBA = "Clave123*";
+        const USUARIOS_PRUEBA = [
+            { nombre: "Mich", rol: "ADMINISTRADOR", correo: "mich@gmail.com" },
+            { nombre: "Cartethyia", rol: "PROPIETARIO", correo: "cartethyia@gmail.com" },
+            { nombre: "Jean", rol: "CLIENTE", correo: "jean@gmail.com" },
+            { nombre: "Mari", rol: "EMPLEADO", correo: "mari@gmail.com" }
+        ];
         const HTTP_UNAUTHORIZED = 401;
         const MILISEGUNDOS_POR_SEGUNDO = 1000;
         const SEGUNDOS_POR_MINUTO = 60;
@@ -271,7 +298,7 @@
         const FORMATO_PRECIO = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
         const cliente = { restaurante: null, categoriaId: "", paginaPedidos: 0, carrito: new Map() };
-        const empleado = { filtro: "", pagina: 0 };
+        const empleado = { filtro: "", pagina: 0, estadoSms: null };
         const propietario = { restaurante: null, categorias: new Map(), categoriaId: "", paginaPlatos: 0 };
 
         const $ = (selector) => document.querySelector(selector);
@@ -358,6 +385,11 @@
             return h("button", { className: clase, type: "button", onClick }, texto);
         }
 
+        const avisoBadge = (notificacion) => notificacion === "SMS"
+            ? h("span", { className: "estado estado-listo", title: "El PIN se envió por SMS" }, "SMS")
+            : notificacion === "SIN_SMS"
+                ? h("span", { className: "estado estado-pendiente", title: "Se usó el atajo: sin SMS ni PIN" }, "Sin SMS")
+                : h("span", { className: "texto-suave" }, "-");
         const estadoBadge = (estado) => h("span", { className: `estado estado-${estado.toLowerCase()}` }, estado.replace("_", " "));
         const formatoPrecio = (valor) => FORMATO_PRECIO.format(valor);
         const formatoFecha = (iso) => new Date(iso).toLocaleString("es-CO");
@@ -424,17 +456,30 @@
             const sesion = obtenerSesion();
             if (!sesion) {
                 mostrarVista("login");
+                mostrarUsuariosPrueba();
                 return;
             }
-            $("#barra").hidden = false;
+            $("#barra-sesion").hidden = false;
             $("#sesion").textContent = `${sesion.correo} · ${sesion.rol}`;
             mostrarVista(sesion.rol);
             ({
                 [ROLES.ADMINISTRADOR]: () => {},
                 [ROLES.PROPIETARIO]: iniciarPropietario,
-                [ROLES.EMPLEADO]: () => cargarPedidosEmpleado(0),
+                [ROLES.EMPLEADO]: iniciarEmpleado,
                 [ROLES.CLIENTE]: iniciarCliente
             })[sesion.rol]();
+        }
+
+        function mostrarUsuariosPrueba() {
+            $("#usuarios-prueba").replaceChildren(...USUARIOS_PRUEBA.map((usuario) => h("li", {},
+                h("button", { type: "button", className: "boton boton-secundario usuario-prueba",
+                    onClick: () => ejecutar($("#login-mensaje"), async () => {
+                        const sesion = await usuariosApi("/auth/login", { method: "POST",
+                            body: { correo: usuario.correo, clave: CLAVE_PRUEBA } });
+                        sessionStorage.setItem(TOKEN_KEY, sesion.token);
+                        location.reload();
+                    }) },
+                    h("strong", {}, usuario.nombre), h("span", { className: "texto-suave" }, usuario.rol)))));
         }
 
         function registrarEventos() {
@@ -589,6 +634,18 @@
             });
         }
 
+        async function iniciarEmpleado() {
+            cargarPedidosEmpleado(0);
+            try {
+                const modo = await api(CONFIG.MENSAJERIA_URL, "/mensajes/modo");
+                empleado.estadoSms = modo.estado;
+                mostrarMensaje($("#empleado-modo-sms"), (modo.real ? "SMS REALES: " : "ATENCIÓN: ") + modo.descripcion,
+                    modo.real ? "exito" : "error");
+            } catch {
+                empleado.estadoSms = null;
+            }
+        }
+
         function cargarPedidosEmpleado(pagina) {
             empleado.pagina = pagina;
             return ejecutar($("#empleado-mensaje"), async () => {
@@ -599,6 +656,7 @@
                     h("td", {}, formatoFecha(pedido.fecha)),
                     h("td", {}, `Cliente ${pedido.idCliente}`),
                     h("td", {}, estadoBadge(pedido.estado)),
+                    h("td", {}, avisoBadge(pedido.notificacion)),
                     h("td", {}, resumenPlatos(pedido)),
                     h("td", {}, pedido.idEmpleado ?? "Sin asignar"),
                     h("td", { className: "acciones" }, accionesEmpleado(pedido)))));
@@ -612,14 +670,28 @@
                     `Pedido #${pedido.id} asignado. Ahora está en preparación.`));
             }
             if (pedido.estado === "EN_PREPARACION") {
-                return boton("Marcar listo", () => cambiarEstadoPedido(pedido.id, "listo", undefined,
-                    `Pedido #${pedido.id} listo. Se envió el PIN al cliente por SMS.`));
+                return h("div", { className: "fila" },
+                    boton("Marcar listo", () => cambiarEstadoPedido(pedido.id, "listo", undefined,
+                        empleado.estadoSms === "SIMULADO"
+                            ? `Pedido #${pedido.id} listo. Modo de desarrollo: el PIN no llegó al celular; búscalo en la terminal o en la consola de Mensajería.`
+                            : `Pedido #${pedido.id} listo. El PIN llegó por SMS al celular del cliente; pídeselo para entregar.`)),
+                    boton("Listo sin SMS", () => cambiarEstadoPedido(pedido.id, "listo?sinSms=true", undefined,
+                        `Pedido #${pedido.id} listo SIN SMS (atajo). Quedó registrado; se entrega sin PIN.`), "boton boton-secundario"));
+            }
+            if (pedido.estado === "LISTO" && pedido.notificacion === "SIN_SMS") {
+                return h("div", { className: "fila" },
+                    boton("Entregar sin PIN", () => cambiarEstadoPedido(pedido.id, "entregar", undefined,
+                        `Pedido #${pedido.id} entregado sin PIN (registrado como "sin SMS").`)),
+                    boton("Enviar PIN por SMS", () => cambiarEstadoPedido(pedido.id, "reenviar-pin", undefined,
+                        `Se envió por SMS un PIN para el pedido #${pedido.id}; ahora se entrega con PIN.`), "boton boton-secundario"));
             }
             if (pedido.estado === "LISTO") {
                 const pin = h("input", { className: "pin", inputmode: "numeric", maxlength: LONGITUD_PIN, placeholder: "PIN",
                     "aria-label": `PIN del pedido ${pedido.id}` });
                 return h("div", { className: "fila" }, pin, boton("Entregar", () => cambiarEstadoPedido(pedido.id, "entregar",
-                    { pin: pin.value.trim() }, `Pedido #${pedido.id} entregado.`)));
+                    { pin: pin.value.trim() }, `Pedido #${pedido.id} entregado.`)),
+                    boton("Reenviar PIN", () => cambiarEstadoPedido(pedido.id, "reenviar-pin", undefined,
+                        `Se reenvió por SMS el PIN del pedido #${pedido.id} al celular del cliente.`), "boton boton-secundario"));
             }
             return h("span", { className: "texto-suave" }, "Sin acciones");
         }
@@ -722,6 +794,7 @@
                     h("td", {}, `#${pedido.id}`),
                     h("td", {}, formatoFecha(pedido.fecha)),
                     h("td", {}, estadoBadge(pedido.estado)),
+                    h("td", {}, avisoBadge(pedido.notificacion)),
                     h("td", {}, resumenPlatos(pedido)),
                     h("td", { className: "acciones" },
                         ESTADOS_FINALES.includes(pedido.estado) ? null
@@ -748,6 +821,8 @@
                     h("span", {}, formatoFecha(cambio.fecha)),
                     h("span", { className: "texto-suave" }, cambio.duracionSegundos === null ? "Estado final"
                         : `Tiempo en este estado: ${formatoDuracion(cambio.duracionSegundos)}`),
+                    cambio.conSms === true ? h("span", { className: "estado estado-listo" }, "PIN enviado por SMS")
+                        : cambio.conSms === false ? h("span", { className: "estado estado-pendiente" }, "Sin SMS (entrega sin PIN)") : null,
                     cambio.correoEmpleado ? h("span", { className: "texto-suave" }, `Empleado: ${cambio.correoEmpleado}`) : null)));
                 $("#cliente-trazabilidad").hidden = false;
                 $("#cliente-trazabilidad").scrollIntoView({ behavior: "smooth" });

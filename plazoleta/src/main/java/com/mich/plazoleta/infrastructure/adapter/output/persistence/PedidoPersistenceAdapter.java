@@ -79,6 +79,8 @@ public class PedidoPersistenceAdapter implements PedidoRepositoryPort {
         entity.setEstado(pedido.getEstado());
         entity.setIdEmpleado(pedido.getIdEmpleado());
         entity.setPin(pedido.getPin());
+        entity.setPinExterno(pedido.isPinExterno());
+        entity.setSinSms(pedido.isSinSms());
         return toDomain(pedidoJpaRepository.save(entity));
     }
 
@@ -109,7 +111,10 @@ public class PedidoPersistenceAdapter implements PedidoRepositoryPort {
                 .map(detalle -> new Pedido.Detalle(detalle.getPlato().getId(), detalle.getPlato().getNombre(),
                         detalle.getCantidad()))
                 .toList();
-        return new Pedido(entity.getId(), entity.getIdCliente(), entity.getFecha(), entity.getEstado(),
+        Pedido pedido = new Pedido(entity.getId(), entity.getIdCliente(), entity.getFecha(), entity.getEstado(),
                 entity.getIdEmpleado(), entity.getRestaurante().getId(), entity.getPin(), platos);
+        pedido.setPinExterno(entity.isPinExterno());
+        pedido.setSinSms(entity.isSinSms());
+        return pedido;
     }
 }

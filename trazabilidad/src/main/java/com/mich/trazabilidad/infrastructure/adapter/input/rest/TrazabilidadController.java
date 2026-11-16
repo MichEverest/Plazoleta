@@ -37,6 +37,13 @@ public class TrazabilidadController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @Operation(summary = "Pedidos del cliente autenticado con su estado actual (CLIENTE)")
+    @GetMapping("/pedidos")
+    public ResponseEntity<List<TrazabilidadDto.ResumenPedido>> listarMisPedidos() {
+        return ResponseEntity.ok(trazabilidadService.listarPedidosDeCliente(UsuarioAutenticado.actual().id()).stream()
+                .map(TrazabilidadDto.ResumenPedido::de).toList());
+    }
+
     @Operation(summary = "HU17 - Trazabilidad de un pedido propio (CLIENTE)")
     @GetMapping("/pedidos/{idPedido}")
     public ResponseEntity<List<TrazabilidadDto.Historial>> consultarHistorial(@PathVariable Long idPedido) {

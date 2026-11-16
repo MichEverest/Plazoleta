@@ -1,5 +1,7 @@
 package com.mich.mensajeria.infrastructure.adapter.input.rest;
 
+import com.mich.mensajeria.domain.exception.ExcepcionesDominio.ProveedorSmsException;
+import com.mich.mensajeria.domain.exception.ExcepcionesDominio.SmsNoConfiguradoException;
 import com.mich.mensajeria.domain.exception.ExcepcionesDominio.ValidacionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ValidacionException.class)
     public ResponseEntity<ErrorResponse> handleValidacion(RuntimeException ex) {
         return responder(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ProveedorSmsException.class)
+    public ResponseEntity<ErrorResponse> handleProveedorSms(RuntimeException ex) {
+        return responder(ex.getMessage(), HttpStatus.BAD_GATEWAY);
+    }
+
+    @ExceptionHandler(SmsNoConfiguradoException.class)
+    public ResponseEntity<ErrorResponse> handleSmsNoConfigurado(RuntimeException ex) {
+        return responder(ex.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

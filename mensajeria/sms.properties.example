@@ -1,0 +1,16 @@
+# Configuración del envío real de SMS (el PIN de los pedidos).
+# Lo más fácil: ejecuta  ./mensajeria/configurar-sms.sh  (pregunta los datos, los verifica y escribe "sms.properties").
+# A mano: copia este archivo como "sms.properties" en esta carpeta y llena UNA de las dos opciones. No se sube a git.
+# Si ninguna está completa, Mensajería rechaza los envíos con un error claro y los pedidos no pasan a LISTO.
+
+# Opción 1: tu propio celular Android con la app "SMS Gateway for Android" (https://sms-gate.app).
+# Los SMS salen de tu SIM, con tu número. URL local: http://<IP que muestra la app>:8080
+# URL en la nube: https://api.sms-gate.app/3rdparty/v1  (usuario y clave de la sección Local Server o Cloud Server)
+android.url=
+android.usuario=
+android.clave=
+
+# Opción 2: Twilio (https://console.twilio.com, sección Account Info)
+twilio.account-sid=
+twilio.auth-token=
+twilio.from-number=

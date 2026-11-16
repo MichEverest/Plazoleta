@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 final class Validaciones {
 
     private static final Pattern PATRON_NUMERICO = Pattern.compile("^\\d+$");
-    private static final Pattern PATRON_TELEFONO = Pattern.compile("^\\+?\\d{1,12}$|^\\d{13}$");
+    private static final Pattern PATRON_TELEFONO = Pattern.compile("^\\d{10}$");
     private static final String MENSAJE_CAMPO_OBLIGATORIO = "El campo %s es obligatorio";
 
     private Validaciones() {

@@ -68,19 +68,30 @@ public class PedidoController {
         return ResponseEntity.ok(PedidoDto.Response.de(asignado));
     }
 
-    @Operation(summary = "HU14 - Marcar pedido listo y notificar al cliente (EMPLEADO)")
+    @Operation(summary = "HU14 - Marcar pedido listo y enviar el PIN por SMS (EMPLEADO). Con sinSms=true es el atajo "
+            + "sin SMS: no hay PIN y la entrega no lo pide; queda registrado en el pedido y en la trazabilidad")
     @PatchMapping("/{id}/listo")
-    public ResponseEntity<PedidoDto.Response> marcarListo(@PathVariable Long id) {
+    public ResponseEntity<PedidoDto.Response> marcarListo(@PathVariable Long id,
+                                                         @RequestParam(defaultValue = "false") boolean sinSms) {
         UsuarioAutenticado empleado = UsuarioAutenticado.actual();
-        Pedido listo = pedidoService.marcarListo(id, empleado.id(), empleado.correo());
+        Pedido listo = pedidoService.marcarListo(id, empleado.id(), empleado.correo(), sinSms);
         return ResponseEntity.ok(PedidoDto.Response.de(listo));
     }
 
-    @Operation(summary = "HU15 - Entregar pedido con PIN (EMPLEADO)")
+    @Operation(summary = "Reenviar por SMS el mismo PIN de un pedido LISTO, si al cliente no le llegó (EMPLEADO)")
+    @PatchMapping("/{id}/reenviar-pin")
+    public ResponseEntity<PedidoDto.Response> reenviarPin(@PathVariable Long id) {
+        Pedido pedido = pedidoService.reenviarPin(id, UsuarioAutenticado.actual().id());
+        return ResponseEntity.ok(PedidoDto.Response.de(pedido));
+    }
+
+    @Operation(summary = "HU15 - Entregar pedido con PIN (EMPLEADO). Si se marcó listo sin SMS, el PIN no se pide")
     @PatchMapping("/{id}/entregar")
-    public ResponseEntity<PedidoDto.Response> entregar(@PathVariable Long id, @RequestBody PedidoDto.Entrega request) {
+    public ResponseEntity<PedidoDto.Response> entregar(@PathVariable Long id,
+                                                       @RequestBody(required = false) PedidoDto.Entrega request) {
         UsuarioAutenticado empleado = UsuarioAutenticado.actual();
-        Pedido entregado = pedidoService.entregar(id, request.pin(), empleado.id(), empleado.correo());
+        Pedido entregado = pedidoService.entregar(id, request == null ? null : request.pin(), empleado.id(),
+                empleado.correo());
         return ResponseEntity.ok(PedidoDto.Response.de(entregado));
     }
 

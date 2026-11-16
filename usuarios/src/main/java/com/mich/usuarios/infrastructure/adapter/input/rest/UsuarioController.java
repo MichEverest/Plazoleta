@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/usuarios")
 @Tag(name = "Usuarios")
@@ -44,6 +46,12 @@ public class UsuarioController {
     public ResponseEntity<UsuarioDto.Creado> crearCliente(@RequestBody UsuarioDto.Request request) {
         Usuario creado = usuarioService.crearCliente(request.toDomain());
         return ResponseEntity.status(HttpStatus.CREATED).body(new UsuarioDto.Creado(creado.getId()));
+    }
+
+    @Operation(summary = "Listar todos los usuarios (ADMINISTRADOR)")
+    @GetMapping
+    public ResponseEntity<List<UsuarioDto.Response>> listar() {
+        return ResponseEntity.ok(usuarioService.listar().stream().map(UsuarioDto.Response::de).toList());
     }
 
     @Operation(summary = "Consultar usuario por id (autenticado)")

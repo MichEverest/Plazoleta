@@ -49,6 +49,9 @@ public class TrazabilidadEntity {
     @Column(name = "correo_empleado")
     private String correoEmpleado;
 
+    @Column(name = "con_sms")
+    private Boolean conSms;
+
     protected TrazabilidadEntity() {
     }
 
@@ -77,4 +80,6 @@ public class TrazabilidadEntity {
     public Estado getEstadoNuevo() { return estadoNuevo; }
     public Long getIdEmpleado() { return idEmpleado; }
     public String getCorreoEmpleado() { return correoEmpleado; }
+    public Boolean getConSms() { return conSms; }
+    public void setConSms(Boolean conSms) { this.conSms = conSms; }
 }

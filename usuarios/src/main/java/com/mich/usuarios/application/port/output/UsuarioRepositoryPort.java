@@ -2,6 +2,7 @@ package com.mich.usuarios.application.port.output;
 
 import com.mich.usuarios.domain.model.Usuario;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UsuarioRepositoryPort {
@@ -15,4 +16,8 @@ public interface UsuarioRepositoryPort {
     Optional<Usuario> buscarPorId(Long id);
 
     Optional<Usuario> buscarPorCorreo(String correo);
+
+    Optional<Usuario> buscarPorNumeroDocumento(String numeroDocumento);
+
+    List<Usuario> listar();
 }

@@ -16,6 +16,7 @@ import com.mich.plazoleta.application.port.output.RestauranteRepositoryPort;
 import com.mich.plazoleta.application.port.output.ServiciosExternosPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,12 +25,16 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,9 +45,9 @@ class PedidoUseCaseTest {
     private static final Long ID_CLIENTE = 3L;
     private static final Long ID_EMPLEADO = 7L;
     private static final Long ID_RESTAURANTE = 1L;
-    private static final String CORREO_CLIENTE = "jean@plazoleta.com";
-    private static final String CORREO_EMPLEADO = "empleado@plazoleta.com";
-    private static final String CELULAR_CLIENTE = "+573000000003";
+    private static final String CORREO_CLIENTE = "jean@gmail.com";
+    private static final String CORREO_EMPLEADO = "empleado@gmail.com";
+    private static final String CELULAR_CLIENTE = "3000000003";
 
     @Mock
     private PedidoRepositoryPort pedidoRepositoryPort;
@@ -71,7 +76,7 @@ class PedidoUseCaseTest {
         assertEquals(Estado.PENDIENTE, creado.getEstado());
         assertEquals(ID_CLIENTE, creado.getIdCliente());
         verify(serviciosExternosPort).registrarCambioEstado(new Pedido.CambioEstado(null, ID_CLIENTE, CORREO_CLIENTE,
-                ID_RESTAURANTE, null, Estado.PENDIENTE, null, null));
+                ID_RESTAURANTE, null, Estado.PENDIENTE, null, null, null));
     }
 
     @Test
@@ -189,7 +194,7 @@ class PedidoUseCaseTest {
         assertEquals(Estado.EN_PREPARACION, asignado.getEstado());
         assertEquals(ID_EMPLEADO, asignado.getIdEmpleado());
         verify(serviciosExternosPort).registrarCambioEstado(new Pedido.CambioEstado(20L, ID_CLIENTE, CORREO_CLIENTE,
-                ID_RESTAURANTE, Estado.PENDIENTE, Estado.EN_PREPARACION, ID_EMPLEADO, CORREO_EMPLEADO));
+                ID_RESTAURANTE, Estado.PENDIENTE, Estado.EN_PREPARACION, ID_EMPLEADO, CORREO_EMPLEADO, null));
     }
 
     @Test
@@ -224,19 +229,73 @@ class PedidoUseCaseTest {
         when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
         when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
 
-        Pedido listo = pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO);
+        Pedido listo = pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO, false);
 
         assertEquals(Estado.LISTO, listo.getEstado());
         assertTrue(listo.getPin().matches("\\d{6}"));
-        verify(serviciosExternosPort).enviarSms(eq(CELULAR_CLIENTE), anyString());
+        verify(serviciosExternosPort).enviarPin(eq(CELULAR_CLIENTE), anyString(), eq(listo.getPin()));
+        assertFalse(listo.isPinExterno());
+    }
+
+    @Test
+    void marcarPedidoListoNoCambiaEstadoSiFallaElSms() {
+        Pedido pedido = pedidoExistente(Estado.EN_PREPARACION);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        doThrow(new IllegalStateException("Twilio caído")).when(serviciosExternosPort).enviarPin(anyString(), anyString(), anyString());
+
+        assertThrows(IllegalStateException.class, () -> pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO, false));
+        verify(pedidoRepositoryPort, never()).actualizar(any());
+        verify(serviciosExternosPort, never()).registrarCambioEstado(any());
+    }
+
+    @Test
+    void reenviarPinEnviaElMismoPinSinCambiarElEstado() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setPin("474200");
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        Pedido resultado = pedidoUseCase.reenviarPin(20L, ID_EMPLEADO);
+
+        assertEquals(Estado.LISTO, resultado.getEstado());
+        assertEquals("474200", resultado.getPin());
+        verify(serviciosExternosPort).enviarPin(eq(CELULAR_CLIENTE), contains("474200"), eq("474200"));
+        verify(serviciosExternosPort, never()).registrarCambioEstado(any());
+    }
+
+    @Test
+    void elSmsDelPinIncluyeNombreYTelefonoDelRestaurante() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setPin("474200");
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(restauranteRepositoryPort.buscarPorId(ID_RESTAURANTE)).thenReturn(Optional.of(
+                new Restaurante(ID_RESTAURANTE, "Sabores de Cartethyia", "900123456", "Calle 10", "3022249736", "logo", 2L)));
+
+        pedidoUseCase.reenviarPin(20L, ID_EMPLEADO);
+
+        verify(serviciosExternosPort).enviarPin(CELULAR_CLIENTE,
+                "Sabores de Cartethyia: tu pedido #20 está listo. Presenta este PIN para reclamarlo: 474200. Dudas al 3022249736",
+                "474200");
+    }
+
+    @Test
+    void reenviarPinFallaSiElPedidoNoEstaListo() {
+        prepararPedidoDelRestaurante(pedidoExistente(Estado.EN_PREPARACION));
+
+        assertThrows(ConflictoException.class, () -> pedidoUseCase.reenviarPin(20L, ID_EMPLEADO));
+        verify(serviciosExternosPort, never()).enviarPin(anyString(), anyString(), anyString());
     }
 
     @Test
     void marcarPedidoListoFallaSiNoEstaEnPreparacion() {
         prepararPedidoDelRestaurante(pedidoExistente(Estado.PENDIENTE));
 
-        assertThrows(ConflictoException.class, () -> pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO));
-        verify(serviciosExternosPort, never()).enviarSms(anyString(), anyString());
+        assertThrows(ConflictoException.class, () -> pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO, false));
+        verify(serviciosExternosPort, never()).enviarPin(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -256,6 +315,7 @@ class PedidoUseCaseTest {
         Pedido pedido = pedidoExistente(Estado.LISTO);
         pedido.setPin("123456");
         prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
 
         assertThrows(ValidacionException.class,
                 () -> pedidoUseCase.entregar(20L, "000000", ID_EMPLEADO, CORREO_EMPLEADO));
@@ -263,8 +323,131 @@ class PedidoUseCaseTest {
     }
 
     @Test
+    void marcarListoConProveedorQueGeneraSuCodigoNoGuardaPinPropio() {
+        Pedido pedido = pedidoExistente(Estado.EN_PREPARACION);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(serviciosExternosPort.enviarPin(anyString(), anyString(), anyString())).thenReturn(true);
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        Pedido listo = pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO, false);
+
+        assertEquals(Estado.LISTO, listo.getEstado());
+        assertTrue(listo.isPinExterno());
+        assertNull(listo.getPin());
+    }
+
+    @Test
+    void entregarConCodigoExternoLoValidaConElProveedor() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setPinExterno(true);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(serviciosExternosPort.verificarPinExterno(CELULAR_CLIENTE, "918273")).thenReturn(true);
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        assertEquals(Estado.ENTREGADO,
+                pedidoUseCase.entregar(20L, " 918273 ", ID_EMPLEADO, CORREO_EMPLEADO).getEstado());
+    }
+
+    @Test
+    void entregarConCodigoExternoInvalidoNoEntrega() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setPinExterno(true);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(serviciosExternosPort.verificarPinExterno(CELULAR_CLIENTE, "000000")).thenReturn(false);
+
+        ValidacionException error = assertThrows(ValidacionException.class,
+                () -> pedidoUseCase.entregar(20L, "000000", ID_EMPLEADO, CORREO_EMPLEADO));
+        assertTrue(error.getMessage().contains("Reenviar PIN"));
+        verify(pedidoRepositoryPort, never()).actualizar(any());
+    }
+
+    @Test
+    void reenviarPinConCodigoExternoPideUnoNuevoAlProveedor() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setPinExterno(true);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(serviciosExternosPort.enviarPin(anyString(), anyString(), anyString())).thenReturn(true);
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        Pedido resultado = pedidoUseCase.reenviarPin(20L, ID_EMPLEADO);
+
+        assertTrue(resultado.isPinExterno());
+        assertEquals(Estado.LISTO, resultado.getEstado());
+        verify(serviciosExternosPort, never()).registrarCambioEstado(any());
+    }
+
+    @Test
+    void marcarListoSinSmsNoEnviaNadaYLoRegistraEnLaTrazabilidad() {
+        Pedido pedido = pedidoExistente(Estado.EN_PREPARACION);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        Pedido listo = pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO, true);
+
+        assertEquals(Estado.LISTO, listo.getEstado());
+        assertTrue(listo.isSinSms());
+        assertNull(listo.getPin());
+        verify(serviciosExternosPort, never()).enviarPin(anyString(), anyString(), anyString());
+        ArgumentCaptor<Pedido.CambioEstado> cambio = ArgumentCaptor.forClass(Pedido.CambioEstado.class);
+        verify(serviciosExternosPort).registrarCambioEstado(cambio.capture());
+        assertEquals(Boolean.FALSE, cambio.getValue().conSms());
+    }
+
+    @Test
+    void marcarListoConSmsLoRegistraEnLaTrazabilidad() {
+        Pedido pedido = pedidoExistente(Estado.EN_PREPARACION);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        pedidoUseCase.marcarListo(20L, ID_EMPLEADO, CORREO_EMPLEADO, false);
+
+        ArgumentCaptor<Pedido.CambioEstado> cambio = ArgumentCaptor.forClass(Pedido.CambioEstado.class);
+        verify(serviciosExternosPort).registrarCambioEstado(cambio.capture());
+        assertEquals(Boolean.TRUE, cambio.getValue().conSms());
+    }
+
+    @Test
+    void entregarPedidoListoSinSmsNoPidePin() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setSinSms(true);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        assertEquals(Estado.ENTREGADO, pedidoUseCase.entregar(20L, null, ID_EMPLEADO, CORREO_EMPLEADO).getEstado());
+        verify(serviciosExternosPort, never()).verificarPinExterno(anyString(), anyString());
+    }
+
+    @Test
+    void reenviarPinEnPedidoSinSmsLoConvierteEnPedidoConPin() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setSinSms(true);
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+        when(pedidoRepositoryPort.actualizar(pedido)).thenReturn(pedido);
+
+        Pedido resultado = pedidoUseCase.reenviarPin(20L, ID_EMPLEADO);
+
+        assertFalse(resultado.isSinSms());
+        assertTrue(resultado.getPin().matches("\\d{6}"));
+        verify(serviciosExternosPort).enviarPin(eq(CELULAR_CLIENTE), anyString(), eq(resultado.getPin()));
+    }
+
+    @Test
     void entregarPedidoFallaSinPin() {
+        Pedido pedido = pedidoExistente(Estado.LISTO);
+        pedido.setPin("123456");
+        prepararPedidoDelRestaurante(pedido);
+        when(serviciosExternosPort.buscarUsuario(ID_CLIENTE)).thenReturn(Optional.of(cliente()));
+
         assertThrows(ValidacionException.class, () -> pedidoUseCase.entregar(20L, " ", ID_EMPLEADO, CORREO_EMPLEADO));
+        verify(pedidoRepositoryPort, never()).actualizar(any());
     }
 
     @Test
@@ -283,7 +466,7 @@ class PedidoUseCaseTest {
 
         assertEquals(Estado.CANCELADO, pedidoUseCase.cancelar(20L, ID_CLIENTE, CORREO_CLIENTE).getEstado());
         verify(serviciosExternosPort).registrarCambioEstado(new Pedido.CambioEstado(20L, ID_CLIENTE, CORREO_CLIENTE,
-                ID_RESTAURANTE, Estado.PENDIENTE, Estado.CANCELADO, null, null));
+                ID_RESTAURANTE, Estado.PENDIENTE, Estado.CANCELADO, null, null, null));
     }
 
     @Test
@@ -306,7 +489,7 @@ class PedidoUseCaseTest {
     void cancelarPedidoFallaSiEsDeOtroCliente() {
         when(pedidoRepositoryPort.buscarPorId(20L)).thenReturn(Optional.of(pedidoExistente(Estado.PENDIENTE)));
 
-        assertThrows(ProhibidoException.class, () -> pedidoUseCase.cancelar(20L, 99L, "otro@plazoleta.com"));
+        assertThrows(ProhibidoException.class, () -> pedidoUseCase.cancelar(20L, 99L, "otro@gmail.com"));
         verify(pedidoRepositoryPort, never()).actualizar(any());
     }
 
@@ -332,7 +515,7 @@ class PedidoUseCaseTest {
     }
 
     private Restaurante restaurante() {
-        return new Restaurante(ID_RESTAURANTE, "Sabores", "900123456", "Calle 10", "+573001234567", "logo", 2L);
+        return new Restaurante(ID_RESTAURANTE, "Sabores", "900123456", "Calle 10", "6044441234", "logo", 2L);
     }
 
     private Plato plato(Long idRestaurante, boolean activo) {

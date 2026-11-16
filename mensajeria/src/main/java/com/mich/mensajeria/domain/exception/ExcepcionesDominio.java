@@ -10,4 +10,16 @@ public final class ExcepcionesDominio {
             super(mensaje);
         }
     }
+
+    public static class ProveedorSmsException extends RuntimeException {
+        public ProveedorSmsException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class SmsNoConfiguradoException extends RuntimeException {
+        public SmsNoConfiguradoException(String mensaje) {
+            super(mensaje);
+        }
+    }
 }

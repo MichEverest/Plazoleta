@@ -63,6 +63,7 @@ public class RestauranteEntity {
     public String getNit() { return nit; }
     public String getDireccion() { return direccion; }
     public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
     public String getUrlLogo() { return urlLogo; }
     public Long getIdPropietario() { return idPropietario; }
     public Set<Long> getEmpleados() { return empleados; }

@@ -14,7 +14,7 @@ public class RestauranteUseCase implements RestauranteService {
 
     private static final String MENSAJE_NOMBRE_SOLO_NUMEROS = "El nombre del restaurante no puede contener solo números";
     private static final String MENSAJE_NIT_INVALIDO = "El NIT debe ser numérico";
-    private static final String MENSAJE_TELEFONO_INVALIDO = "El teléfono debe ser numérico, de máximo 13 caracteres y puede iniciar con +";
+    private static final String MENSAJE_TELEFONO_INVALIDO = "El teléfono debe tener 10 dígitos, sin +57 (ejemplo: 6044441234 o 3023066544)";
     private static final String MENSAJE_NIT_EXISTENTE = "Ya existe un restaurante con ese NIT";
     private static final String MENSAJE_PROPIETARIO_NO_EXISTE = "No existe el usuario propietario con id %d";
     private static final String MENSAJE_NO_ES_PROPIETARIO = "El usuario con id %d no tiene rol PROPIETARIO";

@@ -16,8 +16,13 @@ public class Pedido {
     public record Detalle(Long idPlato, String nombrePlato, Integer cantidad) {
     }
 
+    /**
+     * conSms: en el paso a LISTO indica si el PIN se envió por SMS (true) o si se usó el atajo sin SMS (false);
+     * null en los demás cambios.
+     */
     public record CambioEstado(Long idPedido, Long idCliente, String correoCliente, Long idRestaurante,
-                               Estado estadoAnterior, Estado estadoNuevo, Long idEmpleado, String correoEmpleado) {
+                               Estado estadoAnterior, Estado estadoNuevo, Long idEmpleado, String correoEmpleado,
+                               Boolean conSms) {
     }
 
     private Long id;
@@ -27,6 +32,8 @@ public class Pedido {
     private Long idEmpleado;
     private Long idRestaurante;
     private String pin;
+    private boolean pinExterno;
+    private boolean sinSms;
     private List<Detalle> platos;
 
     public Pedido() {
@@ -64,6 +71,14 @@ public class Pedido {
 
     public String getPin() { return pin; }
     public void setPin(String pin) { this.pin = pin; }
+
+    /** true si el código lo generó y lo valida el proveedor de SMS (Twilio Verify) en vez de este servicio. */
+    public boolean isPinExterno() { return pinExterno; }
+    public void setPinExterno(boolean pinExterno) { this.pinExterno = pinExterno; }
+
+    /** true si el pedido se marcó listo con el atajo "sin SMS": no hay PIN y se entrega sin pedirlo. */
+    public boolean isSinSms() { return sinSms; }
+    public void setSinSms(boolean sinSms) { this.sinSms = sinSms; }
 
     public List<Detalle> getPlatos() { return platos; }
     public void setPlatos(List<Detalle> platos) { this.platos = platos; }

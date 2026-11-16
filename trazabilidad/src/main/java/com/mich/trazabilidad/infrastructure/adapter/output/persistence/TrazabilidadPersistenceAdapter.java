@@ -16,6 +16,8 @@ public class TrazabilidadPersistenceAdapter implements TrazabilidadRepositoryPor
         List<TrazabilidadEntity> findByIdPedidoOrderByFechaAscIdAsc(Long idPedido);
 
         List<TrazabilidadEntity> findByIdRestauranteOrderByFechaAscIdAsc(Long idRestaurante);
+
+        List<TrazabilidadEntity> findByIdClienteOrderByFechaAscIdAsc(Long idCliente);
     }
 
     private final TrazabilidadJpaRepository trazabilidadJpaRepository;
@@ -26,10 +28,12 @@ public class TrazabilidadPersistenceAdapter implements TrazabilidadRepositoryPor
 
     @Override
     public void guardar(Trazabilidad trazabilidad) {
-        trazabilidadJpaRepository.save(new TrazabilidadEntity(trazabilidad.getId(), trazabilidad.getIdPedido(),
+        TrazabilidadEntity entity = new TrazabilidadEntity(trazabilidad.getId(), trazabilidad.getIdPedido(),
                 trazabilidad.getIdCliente(), trazabilidad.getCorreoCliente(), trazabilidad.getIdRestaurante(),
                 trazabilidad.getFecha(), trazabilidad.getEstadoAnterior(), trazabilidad.getEstadoNuevo(),
-                trazabilidad.getIdEmpleado(), trazabilidad.getCorreoEmpleado()));
+                trazabilidad.getIdEmpleado(), trazabilidad.getCorreoEmpleado());
+        entity.setConSms(trazabilidad.getConSms());
+        trazabilidadJpaRepository.save(entity);
     }
 
     @Override
@@ -46,9 +50,18 @@ public class TrazabilidadPersistenceAdapter implements TrazabilidadRepositoryPor
                 .toList();
     }
 
+    @Override
+    public List<Trazabilidad> listarPorCliente(Long idCliente) {
+        return trazabilidadJpaRepository.findByIdClienteOrderByFechaAscIdAsc(idCliente).stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
     private Trazabilidad toDomain(TrazabilidadEntity entity) {
-        return new Trazabilidad(entity.getId(), entity.getIdPedido(), entity.getIdCliente(), entity.getCorreoCliente(),
-                entity.getIdRestaurante(), entity.getFecha(), entity.getEstadoAnterior(), entity.getEstadoNuevo(),
-                entity.getIdEmpleado(), entity.getCorreoEmpleado());
+        Trazabilidad trazabilidad = new Trazabilidad(entity.getId(), entity.getIdPedido(), entity.getIdCliente(),
+                entity.getCorreoCliente(), entity.getIdRestaurante(), entity.getFecha(), entity.getEstadoAnterior(),
+                entity.getEstadoNuevo(), entity.getIdEmpleado(), entity.getCorreoEmpleado());
+        trazabilidad.setConSms(entity.getConSms());
+        return trazabilidad;
     }
 }

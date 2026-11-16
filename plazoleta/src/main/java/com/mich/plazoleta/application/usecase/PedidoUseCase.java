@@ -13,6 +13,7 @@ import com.mich.plazoleta.domain.model.Pagina;
 import com.mich.plazoleta.domain.model.Pedido;
 import com.mich.plazoleta.domain.model.Pedido.Estado;
 import com.mich.plazoleta.domain.model.Plato;
+import com.mich.plazoleta.domain.model.Restaurante;
 import com.mich.plazoleta.domain.model.Usuario;
 
 import java.security.SecureRandom;
@@ -21,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class PedidoUseCase implements PedidoService {
@@ -51,8 +53,12 @@ public class PedidoUseCase implements PedidoService {
     private static final String MENSAJE_PEDIDO_AJENO = "El pedido no pertenece al cliente autenticado";
     private static final String MENSAJE_TRANSICION_INVALIDA = "El pedido está en estado %s y esta acción requiere el estado %s";
     private static final String MENSAJE_PIN_INCORRECTO = "El PIN no coincide con el del pedido";
+    private static final String MENSAJE_PIN_EXTERNO_INCORRECTO = "El código no es válido o ya venció (los códigos de "
+            + "Twilio duran 10 minutos). Revísalo con el cliente o pulsa Reenviar PIN para enviarle uno nuevo";
     private static final String MENSAJE_CLIENTE_NO_EXISTE = "No existe el cliente con id %d";
-    private static final String MENSAJE_SMS_PEDIDO_LISTO = "Tu pedido #%d está listo. Presenta este PIN para reclamarlo: %s";
+    private static final String MENSAJE_SMS_PEDIDO_LISTO = "%s: tu pedido #%d está listo. Presenta este PIN para reclamarlo: %s.%s";
+    private static final String MENSAJE_SMS_CONTACTO = " Dudas al %s";
+    private static final String NOMBRE_GENERICO = "Plazoleta";
 
     private final PedidoRepositoryPort pedidoRepositoryPort;
     private final PlatoRepositoryPort platoRepositoryPort;
@@ -109,25 +115,60 @@ public class PedidoUseCase implements PedidoService {
     }
 
     @Override
-    public Pedido marcarListo(Long idPedido, Long idEmpleado, String correoEmpleado) {
+    public Pedido marcarListo(Long idPedido, Long idEmpleado, String correoEmpleado, boolean sinSms) {
         Pedido pedido = buscarPedidoDelRestaurante(idPedido, idEmpleado);
         validarEstado(pedido, Estado.EN_PREPARACION);
-        pedido.setPin(String.format(FORMATO_PIN, GENERADOR_PIN.nextInt(LIMITE_PIN)));
         Usuario cliente = buscarCliente(pedido);
-        Pedido listo = cambiarEstado(pedido, Estado.LISTO, cliente.correo(), idEmpleado, correoEmpleado);
-        serviciosExternosPort.enviarSms(cliente.celular(), String.format(MENSAJE_SMS_PEDIDO_LISTO, pedido.getId(), pedido.getPin()));
-        return listo;
+        if (sinSms) {
+            pedido.setSinSms(true);
+            pedido.setPin(null);
+            pedido.setPinExterno(false);
+        } else {
+            // Primero el SMS: si el proveedor falla, el pedido sigue EN_PREPARACION y no se registra trazabilidad.
+            enviarPin(pedido, cliente, nuevoPin());
+        }
+        return cambiarEstado(pedido, Estado.LISTO, cliente.correo(), idEmpleado, correoEmpleado);
+    }
+
+    @Override
+    public Pedido reenviarPin(Long idPedido, Long idEmpleado) {
+        Pedido pedido = buscarPedidoDelRestaurante(idPedido, idEmpleado);
+        validarEstado(pedido, Estado.LISTO);
+        Usuario cliente = buscarCliente(pedido);
+        // Se reenvía el mismo PIN; si no había (atajo sin SMS o Twilio Verify) se genera o se pide uno nuevo.
+        enviarPin(pedido, cliente, pedido.getPin() == null ? nuevoPin() : pedido.getPin());
+        return pedidoRepositoryPort.actualizar(pedido);
     }
 
     @Override
     public Pedido entregar(Long idPedido, String pin, Long idEmpleado, String correoEmpleado) {
-        Validaciones.requerido(pin, "pin");
         Pedido pedido = buscarPedidoDelRestaurante(idPedido, idEmpleado);
         validarEstado(pedido, Estado.LISTO);
-        if (!pin.equals(pedido.getPin())) {
-            throw new ValidacionException(MENSAJE_PIN_INCORRECTO);
+        Usuario cliente = buscarCliente(pedido);
+        if (!pedido.isSinSms()) {
+            Validaciones.requerido(pin, "pin");
+            boolean valido = pedido.isPinExterno()
+                    ? serviciosExternosPort.verificarPinExterno(cliente.celular(), pin.trim())
+                    : pin.trim().equals(pedido.getPin());
+            if (!valido) {
+                throw new ValidacionException(pedido.isPinExterno() ? MENSAJE_PIN_EXTERNO_INCORRECTO : MENSAJE_PIN_INCORRECTO);
+            }
         }
-        return cambiarEstado(pedido, Estado.ENTREGADO, buscarCliente(pedido).correo(), idEmpleado, correoEmpleado);
+        return cambiarEstado(pedido, Estado.ENTREGADO, cliente.correo(), idEmpleado, correoEmpleado);
+    }
+
+    private String nuevoPin() {
+        return String.format(FORMATO_PIN, GENERADOR_PIN.nextInt(LIMITE_PIN));
+    }
+
+    private void enviarPin(Pedido pedido, Usuario cliente, String pin) {
+        pedido.setPin(pin);
+        pedido.setSinSms(false);
+        boolean externo = serviciosExternosPort.enviarPin(cliente.celular(), mensajePin(pedido), pin);
+        pedido.setPinExterno(externo);
+        if (externo) {
+            pedido.setPin(null);
+        }
     }
 
     @Override
@@ -140,6 +181,13 @@ public class PedidoUseCase implements PedidoService {
             throw new ConflictoException(MENSAJES_NO_CANCELABLE.get(pedido.getEstado()));
         }
         return cambiarEstado(pedido, Estado.CANCELADO, correoCliente, null, null);
+    }
+
+    private String mensajePin(Pedido pedido) {
+        Optional<Restaurante> restaurante = restauranteRepositoryPort.buscarPorId(pedido.getIdRestaurante());
+        String nombre = restaurante.map(Restaurante::nombre).orElse(NOMBRE_GENERICO);
+        String contacto = restaurante.map(r -> String.format(MENSAJE_SMS_CONTACTO, r.telefono())).orElse("");
+        return String.format(MENSAJE_SMS_PEDIDO_LISTO, nombre, pedido.getId(), pedido.getPin(), contacto);
     }
 
     private void validarPlatos(Pedido pedido) {
@@ -215,7 +263,9 @@ public class PedidoUseCase implements PedidoService {
 
     private void registrarCambio(Pedido pedido, Estado anterior, String correoCliente,
                                  Long idEmpleado, String correoEmpleado) {
+        Boolean conSms = pedido.getEstado() == Estado.LISTO ? !pedido.isSinSms() : null;
         serviciosExternosPort.registrarCambioEstado(new Pedido.CambioEstado(pedido.getId(), pedido.getIdCliente(),
-                correoCliente, pedido.getIdRestaurante(), anterior, pedido.getEstado(), idEmpleado, correoEmpleado));
+                correoCliente, pedido.getIdRestaurante(), anterior, pedido.getEstado(), idEmpleado, correoEmpleado,
+                conSms));
     }
 }

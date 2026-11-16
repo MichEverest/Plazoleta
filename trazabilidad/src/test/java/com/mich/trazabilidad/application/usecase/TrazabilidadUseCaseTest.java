@@ -177,8 +177,49 @@ class TrazabilidadUseCaseTest {
         assertThrows(ValidacionException.class, () -> new Pagina.Solicitud(0, 101));
     }
 
+    @Test
+    void listarPedidosDeClienteResumeCadaPedidoConSuUltimoEstadoMasRecientePrimero() {
+        when(trazabilidadRepositoryPort.listarPorCliente(3L)).thenReturn(List.of(
+                registro(1L, null, Estado.PENDIENTE, 0, null),
+                registro(1L, Estado.PENDIENTE, Estado.CANCELADO, 2, null),
+                registro(2L, null, Estado.PENDIENTE, 10, null),
+                registro(2L, Estado.PENDIENTE, Estado.EN_PREPARACION, 15, 7L)));
+
+        List<Trazabilidad.Resumen> resumen = trazabilidadUseCase.listarPedidosDeCliente(3L);
+
+        assertEquals(2, resumen.size());
+        assertEquals(2L, resumen.get(0).idPedido());
+        assertEquals(Estado.EN_PREPARACION, resumen.get(0).estadoActual());
+        assertEquals(INICIO.plusMinutes(10), resumen.get(0).fechaCreacion());
+        assertEquals(INICIO.plusMinutes(15), resumen.get(0).fechaUltimoCambio());
+        assertEquals(1L, resumen.get(1).idPedido());
+        assertEquals(Estado.CANCELADO, resumen.get(1).estadoActual());
+    }
+
+    @Test
+    void listarPedidosDeClienteSinRegistrosDevuelveListaVacia() {
+        when(trazabilidadRepositoryPort.listarPorCliente(3L)).thenReturn(List.of());
+
+        assertTrue(trazabilidadUseCase.listarPedidosDeCliente(3L).isEmpty());
+    }
+
+    @Test
+    void consultarHistorialIndicaSiElPinSeEnvioPorSms() {
+        Trazabilidad listo = registro(20L, Estado.EN_PREPARACION, Estado.LISTO, 10, 7L);
+        listo.setConSms(false);
+        when(trazabilidadRepositoryPort.listarPorPedido(20L)).thenReturn(List.of(
+                registro(20L, null, Estado.PENDIENTE, 0, null),
+                listo,
+                registro(20L, Estado.LISTO, Estado.ENTREGADO, 15, 7L)));
+
+        List<Trazabilidad.Historial> historial = trazabilidadUseCase.consultarHistorial(20L, 3L);
+
+        assertNull(historial.get(0).conSms());
+        assertEquals(Boolean.FALSE, historial.get(1).conSms());
+    }
+
     private Trazabilidad registro(Long idPedido, Estado anterior, Estado nuevo, int minutos, Long idEmpleado) {
-        return new Trazabilidad(null, idPedido, 3L, "jean@plazoleta.com", ID_RESTAURANTE, INICIO.plusMinutes(minutos),
-                anterior, nuevo, idEmpleado, idEmpleado == null ? null : "empleado" + idEmpleado + "@plazoleta.com");
+        return new Trazabilidad(null, idPedido, 3L, "jean@gmail.com", ID_RESTAURANTE, INICIO.plusMinutes(minutos),
+                anterior, nuevo, idEmpleado, idEmpleado == null ? null : "empleado" + idEmpleado + "@gmail.com");
     }
 }

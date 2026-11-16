@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
@@ -27,6 +28,8 @@ import java.util.List;
 @Configuration
 public class SecurityConfiguration {
 
+    private static final String ADMINISTRADOR = "ADMINISTRADOR";
+    private static final String[] RUTAS_FRONT = {"/", "/index.html", "/styles.css"};
     private static final String[] RUTAS_SWAGGER = {"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"};
     private static final List<String> METODOS_PERMITIDOS = List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
     private static final List<String> HEADERS_PERMITIDOS = List.of(HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE);
@@ -58,7 +61,9 @@ public class SecurityConfiguration {
                         .accessDeniedHandler((request, response, ex) ->
                                 escribirError(response, MENSAJE_SIN_PERMISOS, HttpStatus.FORBIDDEN)))
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.GET, RUTAS_FRONT).permitAll();
                     auth.requestMatchers(RUTAS_SWAGGER).permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/mensajes/sms").hasRole(ADMINISTRADOR);
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtService.filtro(), UsernamePasswordAuthenticationFilter.class);

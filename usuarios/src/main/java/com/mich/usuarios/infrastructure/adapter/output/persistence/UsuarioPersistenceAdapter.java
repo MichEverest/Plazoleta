@@ -6,15 +6,18 @@ import com.mich.usuarios.domain.model.Usuario;
 import com.mich.usuarios.domain.model.Usuario.Rol;
 import com.mich.usuarios.infrastructure.adapter.output.persistence.entity.RolEntity;
 import com.mich.usuarios.infrastructure.adapter.output.persistence.entity.UsuarioEntity;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
 public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
 
     private static final String MENSAJE_ROL_NO_ENCONTRADO = "No existe el rol %s";
+    private static final Sort ORDEN_POR_ID = Sort.by("id");
 
     public interface UsuarioJpaRepository extends JpaRepository<UsuarioEntity, Long> {
 
@@ -23,6 +26,8 @@ public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
         boolean existsByNumeroDocumento(String numeroDocumento);
 
         Optional<UsuarioEntity> findByCorreo(String correo);
+
+        Optional<UsuarioEntity> findByNumeroDocumento(String numeroDocumento);
     }
 
     public interface RolJpaRepository extends JpaRepository<RolEntity, Long> {
@@ -61,6 +66,16 @@ public class UsuarioPersistenceAdapter implements UsuarioRepositoryPort {
     @Override
     public Optional<Usuario> buscarPorCorreo(String correo) {
         return usuarioJpaRepository.findByCorreo(correo).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<Usuario> buscarPorNumeroDocumento(String numeroDocumento) {
+        return usuarioJpaRepository.findByNumeroDocumento(numeroDocumento).map(this::toDomain);
+    }
+
+    @Override
+    public List<Usuario> listar() {
+        return usuarioJpaRepository.findAll(ORDEN_POR_ID).stream().map(this::toDomain).toList();
     }
 
     private UsuarioEntity toEntity(Usuario usuario) {

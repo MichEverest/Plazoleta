@@ -23,12 +23,17 @@ public final class PedidoDto {
     public record DetalleRequest(Long idPlato, Integer cantidad) {
     }
 
+    /**
+     * notificacion: cómo se avisó al cliente que el pedido está listo, "SMS" o "SIN_SMS" (atajo); null antes de LISTO.
+     */
     public record Response(Long id, Long idCliente, LocalDateTime fecha, String estado, Long idEmpleado,
-                           Long idRestaurante, List<DetalleResponse> platos) {
+                           Long idRestaurante, String notificacion, List<DetalleResponse> platos) {
 
         public static Response de(Pedido pedido) {
+            boolean avisado = pedido.getEstado() == Pedido.Estado.LISTO || pedido.getEstado() == Pedido.Estado.ENTREGADO;
+            String notificacion = avisado ? (pedido.isSinSms() ? "SIN_SMS" : "SMS") : null;
             return new Response(pedido.getId(), pedido.getIdCliente(), pedido.getFecha(), pedido.getEstado().name(),
-                    pedido.getIdEmpleado(), pedido.getIdRestaurante(), pedido.getPlatos().stream()
+                    pedido.getIdEmpleado(), pedido.getIdRestaurante(), notificacion, pedido.getPlatos().stream()
                     .map(detalle -> new DetalleResponse(detalle.idPlato(), detalle.nombrePlato(), detalle.cantidad()))
                     .toList());
         }

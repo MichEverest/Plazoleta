@@ -11,7 +11,16 @@ public interface ServiciosExternosPort {
 
     Long crearEmpleado(Usuario empleado);
 
-    void enviarSms(String celular, String mensaje);
+    /**
+     * Envía al cliente el PIN de su pedido. Devuelve true si el proveedor genera y valida su propio código (Twilio Verify):
+     * en ese caso el PIN propuesto no se usa y la entrega se comprueba con {@link #verificarPinExterno}.
+     */
+    boolean enviarPin(String celular, String mensaje, String pin);
+
+    /**
+     * Pregunta al proveedor si el código que dio el cliente es el que le llegó por SMS.
+     */
+    boolean verificarPinExterno(String celular, String codigo);
 
     void registrarCambioEstado(Pedido.CambioEstado cambio);
 }

@@ -11,19 +11,20 @@ import com.mich.usuarios.domain.model.Usuario;
 import com.mich.usuarios.domain.model.Usuario.Rol;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class UsuarioUseCase implements UsuarioService {
 
     private static final Pattern PATRON_CORREO = Pattern.compile("^[\\w.%+-]+@[\\w-]+(\\.[\\w-]+)*\\.[A-Za-z]{2,}$");
     private static final Pattern PATRON_DOCUMENTO = Pattern.compile("^\\d+$");
-    private static final Pattern PATRON_CELULAR = Pattern.compile("^\\+?\\d{1,12}$|^\\d{13}$");
+    private static final Pattern PATRON_CELULAR = Pattern.compile("^3\\d{9}$");
     private static final int EDAD_MINIMA = 18;
 
     private static final String MENSAJE_CAMPO_OBLIGATORIO = "El campo %s es obligatorio";
     private static final String MENSAJE_CORREO_INVALIDO = "El correo no tiene una estructura válida";
     private static final String MENSAJE_DOCUMENTO_INVALIDO = "El número de documento debe ser numérico";
-    private static final String MENSAJE_CELULAR_INVALIDO = "El celular debe ser numérico, de máximo 13 caracteres y puede iniciar con +";
+    private static final String MENSAJE_CELULAR_INVALIDO = "El celular debe ser un número colombiano de 10 dígitos que empiece por 3, sin +57 (ejemplo: 3023066544)";
     private static final String MENSAJE_MENOR_DE_EDAD = "El usuario debe ser mayor de edad";
     private static final String MENSAJE_CORREO_EXISTENTE = "Ya existe un usuario con ese correo";
     private static final String MENSAJE_DOCUMENTO_EXISTENTE = "Ya existe un usuario con ese número de documento";
@@ -62,6 +63,11 @@ public class UsuarioUseCase implements UsuarioService {
     public Usuario consultarPorId(Long id) {
         return usuarioRepositoryPort.buscarPorId(id)
                 .orElseThrow(() -> new NoEncontradoException(String.format(MENSAJE_USUARIO_NO_ENCONTRADO, id)));
+    }
+
+    @Override
+    public List<Usuario> listar() {
+        return usuarioRepositoryPort.listar();
     }
 
     @Override
